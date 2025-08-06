@@ -1,5 +1,6 @@
 using Core.WebApi.Extensions;
 using Serilog;
+using Simpl.Expenses.Infrastructure;
 namespace Core.WebApi
 {
     public class Program
@@ -52,8 +53,8 @@ namespace Core.WebApi
             builder.Services.ConfigureDependencies(builder.Configuration);
             builder.Services.ConfigureJwtAuthentication(builder.Configuration);
             builder.Services.ConfigureSwagger();
-            builder.Services.ConfigureDatabase(builder.Configuration);
             builder.Services.ConfigureCors(builder.Configuration);
+            builder.Services.AddInfrastructure(builder.Configuration);
 
             // Register services
 

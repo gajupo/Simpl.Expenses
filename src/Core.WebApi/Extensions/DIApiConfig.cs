@@ -92,16 +92,6 @@ namespace Core.WebApi.Extensions
             });
         }
 
-        public static void ConfigureDatabase(this IServiceCollection services, IConfiguration configuration)
-        {
-            var connectionString = configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Database connection string is not configured");
-
-            services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"),
-                    b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
-        }
-
         public static void ConfigureCors(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddCors(options =>
