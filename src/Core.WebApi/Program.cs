@@ -1,6 +1,7 @@
 using Core.WebApi.Extensions;
 using Serilog;
 using Simpl.Expenses.Infrastructure;
+using Simpl.Expenses.Application;
 namespace Core.WebApi
 {
     public class Program
@@ -55,8 +56,7 @@ namespace Core.WebApi
             builder.Services.ConfigureSwagger();
             builder.Services.ConfigureCors(builder.Configuration);
             builder.Services.AddInfrastructure(builder.Configuration);
-
-            // Register services
+            builder.Services.AddApplication();
 
             // add controllers
             builder.Services.AddControllers();

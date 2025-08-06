@@ -1,0 +1,120 @@
+
+using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using Simpl.Expenses.Application.Dtos.User;
+using Simpl.Expenses.Application.Interfaces;
+using Simpl.Expenses.Application.Services;
+using Simpl.Expenses.Domain.Entities;
+using Simpl.Expenses.Infrastructure.Persistence;
+using Simpl.Expenses.Infrastructure.Repositories;
+
+namespace Simpl.Expenses.Application.Tests
+{
+    public class UserServiceTests : IDisposable
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly IGenericRepository<User> _userRepository;
+        private readonly IMapper _mapper;
+        private readonly IUserService _userService;
+
+        public UserServiceTests()
+        {
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString()) // Unique DB for each test run
+                .Options;
+
+            _context = new ApplicationDbContext(options);
+
+            var mappingConfig = new MapperConfiguration(mc =>
+            {
+                mc.AddProfile(new MappingProfile());
+            });
+            _mapper = mappingConfig.CreateMapper();
+
+            _userRepository = new GenericRepository<User>(_context);
+            _userService = new UserService(_userRepository, _mapper);
+        }
+
+        private void SeedDatabase()
+        {
+            var users = new List<User>
+            {
+                new User { Id = 1, Username = "user1", Email = "user1@test.com", PasswordHash = "hash1", IsActive = true, DepartmentId = 1, RoleId = 1 },
+                new User { Id = 2, Username = "user2", Email = "user2@test.com", PasswordHash = "hash2", IsActive = true, DepartmentId = 1, RoleId = 1 }
+            };
+            _context.Users.AddRange(users);
+            _context.SaveChanges();
+        }
+
+        [Fact]
+        public async Task GetUserByIdAsync_ShouldReturnUserDto_WhenUserExists()
+        {
+            // Arrange
+            SeedDatabase();
+
+            // Act
+            var result = await _userService.GetUserByIdAsync(1);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(1, result.Id);
+            Assert.Equal("user1", result.Username);
+        }
+
+        [Fact]
+        public async Task GetAllUsersAsync_ShouldReturnAllUserDtos()
+        {
+            // Arrange
+            SeedDatabase();
+
+            // Act
+            var result = await _userService.GetAllUsersAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result.Count());
+        }
+
+        [Fact]
+        public async Task CreateUserAsync_ShouldAddUserToDatabase()
+        {
+            // Arrange
+            var createUserDto = new CreateUserDto { Username = "newuser", Email = "new@user.com", Password = "password123", DepartmentId = 1, RoleId = 1 };
+
+            // Act
+            var result = await _userService.CreateUserAsync(createUserDto);
+            var userInDb = await _context.Users.FindAsync(result.Id);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(userInDb);
+            Assert.Equal("newuser", userInDb.Username);
+        }
+
+        [Fact]
+        public void GetAll_ShouldSupportProjection()
+        {
+            // Arrange
+            SeedDatabase();
+
+            // Act
+            var projectedUsers = _userRepository.GetAll()
+                .Select(u => new { u.Id, u.Username })
+                .ToList();
+
+            // Assert
+            Assert.NotNull(projectedUsers);
+            Assert.Equal(2, projectedUsers.Count);
+            Assert.Equal(1, projectedUsers[0].Id);
+            Assert.Equal("user1", projectedUsers[0].Username);
+            Assert.Null(projectedUsers[0].GetType().GetProperty("Email"));
+            Assert.Null(projectedUsers[0].GetType().GetProperty("PasswordHash"));
+        }
+
+        public void Dispose()
+        {
+            _context.Database.EnsureDeleted();
+            _context.Dispose();
+        }
+    }
+}

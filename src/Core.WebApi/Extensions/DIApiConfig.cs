@@ -28,12 +28,6 @@ namespace Core.WebApi.Extensions
             services.AddHttpContextAccessor();
         }
 
-        public static void ConfigureMappings(this IServiceCollection services)
-        {
-            // register mapper profile
-            // services.AddAutoMapper(typeof(MappingProfile));
-        }
-
         public static void ConfigureJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
             var jwtKey = configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key is not configured");
