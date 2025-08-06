@@ -1,44 +1,95 @@
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+using Core.WebApi.Extensions;
+using Serilog;
+namespace Core.WebApi
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    public class Program
+    {
+        public static async Task Main(string[] args)
+        {
+            var builder = CreateHostBuilder(args);
+            await RunApplicationAsync(builder);
+        }
 
-app.UseHttpsRedirection();
+        public static WebApplicationBuilder CreateHostBuilder(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
+            ConfigureServices(builder);
+            return builder;
+        }
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+        public static async Task RunApplicationAsync(
+        WebApplicationBuilder builder,
+        CancellationToken cancellationToken = default,
+        Serilog.ILogger? logger = null
+        )
+        {
+            // Use provided logger or create default
+            Log.Logger = logger ?? new LoggerConfiguration().WriteTo.Console().CreateLogger();
+            Log.Information("Starting up Core API");
+            try
+            {
+                var app = builder.Build();
+                await ConfigureApplication(app, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Application start-up failed");
+                throw;
+            }
+            finally
+            {
+                Log.Information("Shutting down");
+                Log.CloseAndFlush();
+            }
+        }
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+        private static void ConfigureServices(WebApplicationBuilder builder)
+        {
+            // configure Serilog
+            builder.ConfigureSerilog();
 
-app.Run();
+            // add services
+            builder.Services.ConfigureDependencies(builder.Configuration);
+            builder.Services.ConfigureJwtAuthentication(builder.Configuration);
+            builder.Services.ConfigureSwagger();
+            builder.Services.ConfigureDatabase(builder.Configuration);
+            builder.Services.ConfigureCors(builder.Configuration);
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+            // Register services
+
+            // add controllers
+            builder.Services.AddControllers();
+
+            // add memory cache
+            builder.Services.AddMemoryCache();
+        }
+
+        private static async Task ConfigureApplication(
+        WebApplication app,
+        CancellationToken cancellationToken
+        )
+        {
+            // configure the global exception handler
+            app.UseGlobalExceptionHandler();
+            // app.UseHttpsRedirection();
+
+            // Configure CORS based on environment
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseCors("DevelopmentCorsPolicy");
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
+            else
+            {
+                app.UseCors("ProductionCorsPolicy");
+            }
+
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.MapControllers();
+            await app.RunAsync(cancellationToken);
+        }
+    }
 }
