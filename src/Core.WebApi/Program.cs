@@ -55,7 +55,7 @@ namespace Core.WebApi
             builder.Services.ConfigureJwtAuthentication(builder.Configuration);
             builder.Services.ConfigureSwagger();
             builder.Services.ConfigureCors(builder.Configuration);
-            builder.Services.AddInfrastructure(builder.Configuration);
+            builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
             builder.Services.AddApplication();
 
             // add controllers

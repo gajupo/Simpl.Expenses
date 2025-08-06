@@ -14,31 +14,7 @@ namespace Simpl.Expenses.WebAPI.Tests
         {
             builder.ConfigureServices(services =>
             {
-                // Find and remove the original ApplicationDbContext registration.
-                var dbContextDescriptor = services.SingleOrDefault(
-                    d => d.ServiceType ==
-                        typeof(ApplicationDbContext));
-
-                if (dbContextDescriptor != null)
-                {
-                    services.Remove(dbContextDescriptor);
-                }
-
-                // Find and remove the original DbContextOptions registration.
-                var dbOptionsDescriptor = services.SingleOrDefault(
-                    d => d.ServiceType ==
-                        typeof(DbContextOptions<ApplicationDbContext>));
-
-                if (dbOptionsDescriptor != null)
-                {
-                    services.Remove(dbOptionsDescriptor);
-                }
-
-                // Add a new DbContext registration using an in-memory database for testing.
-                services.AddDbContext<ApplicationDbContext>(options =>
-                {
-                    options.UseInMemoryDatabase("InMemoryDbForTesting");
-                });
+                builder.UseEnvironment("Testing");
             });
         }
     }

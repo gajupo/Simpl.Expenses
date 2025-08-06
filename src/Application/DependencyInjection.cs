@@ -9,7 +9,7 @@ namespace Simpl.Expenses.Application
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
-            services.AddAutoMapper(typeof(DependencyInjection).Assembly);
+            services.AddAutoMapper(typeof(MappingProfile).Assembly);
             services.AddScoped<IUserService, UserService>();
             return services;
         }
