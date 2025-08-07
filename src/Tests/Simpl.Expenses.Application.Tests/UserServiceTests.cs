@@ -111,6 +111,43 @@ namespace Simpl.Expenses.Application.Tests
             Assert.Null(projectedUsers[0].GetType().GetProperty("PasswordHash"));
         }
 
+        [Fact]
+        public async Task CreateUserAsync_ShouldPersistUserToDatabase_AndIncrementUserCount()
+        {
+            // Arrange
+            var initialUserCount = await _context.Users.CountAsync();
+            var createUserDto = new CreateUserDto
+            {
+                Username = "persisteduser",
+                Email = "persisted@user.com",
+                Password = "securepassword123",
+                DepartmentId = 1,
+                RoleId = 1
+            };
+
+            // Act
+            var result = await _userService.CreateUserAsync(createUserDto);
+
+            // Assert - Verify the returned DTO
+            Assert.NotNull(result);
+            Assert.Equal("persisteduser", result.Username);
+            Assert.Equal("persisted@user.com", result.Email);
+            Assert.True(result.Id > 0);
+
+            // Assert - Verify the user was actually saved to the database
+            var finalUserCount = await _context.Users.CountAsync();
+            Assert.Equal(initialUserCount + 1, finalUserCount);
+
+            // Assert - Verify the user can be retrieved from the database
+            var savedUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == "persisteduser");
+            Assert.NotNull(savedUser);
+            Assert.Equal("persisteduser", savedUser.Username);
+            Assert.Equal("persisted@user.com", savedUser.Email);
+            Assert.True(BCrypt.Net.BCrypt.Verify("securepassword123", savedUser.PasswordHash));
+            Assert.Equal(1, savedUser.DepartmentId);
+            Assert.Equal(1, savedUser.RoleId);
+        }
+
         public void Dispose()
         {
             _context.Database.EnsureDeleted();

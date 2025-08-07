@@ -2,9 +2,6 @@ using AutoMapper;
 using Simpl.Expenses.Application.Dtos.User;
 using Simpl.Expenses.Application.Interfaces;
 using Simpl.Expenses.Domain.Entities;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 
 namespace Simpl.Expenses.Application.Services
@@ -20,47 +17,42 @@ namespace Simpl.Expenses.Application.Services
             _mapper = mapper;
         }
 
-        public async Task<UserDto> GetUserByIdAsync(int id)
+        public async Task<UserDto> GetUserByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var user = await _userRepository.GetByIdAsync(id);
+            var user = await _userRepository.GetByIdAsync(id, cancellationToken);
             return _mapper.Map<UserDto>(user);
         }
 
-        public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
+        public async Task<IEnumerable<UserDto>> GetAllUsersAsync(CancellationToken cancellationToken = default)
         {
-            var users = await _userRepository.GetAll().ToListAsync();
+            var users = await _userRepository.GetAll(cancellationToken).ToListAsync(cancellationToken);
             return _mapper.Map<IEnumerable<UserDto>>(users);
         }
 
-        public async Task<UserDto> CreateUserAsync(CreateUserDto createUserDto)
+        public async Task<UserDto> CreateUserAsync(CreateUserDto createUserDto, CancellationToken cancellationToken = default)
         {
             var user = _mapper.Map<User>(createUserDto);
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(createUserDto.Password);
-            await _userRepository.AddAsync(user);
+            await _userRepository.AddAsync(user, cancellationToken);
             return _mapper.Map<UserDto>(user);
         }
 
-        public async Task UpdateUserAsync(int id, UpdateUserDto updateUserDto)
+        public async Task UpdateUserAsync(int id, UpdateUserDto updateUserDto, CancellationToken cancellationToken = default)
         {
-            var user = await _userRepository.GetByIdAsync(id);
+            var user = await _userRepository.GetByIdAsync(id, cancellationToken);
             if (user == null) return;
 
             _mapper.Map(updateUserDto, user);
 
-            if (!string.IsNullOrEmpty(updateUserDto.Password))
-            {
-                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(updateUserDto.Password);
-            }
-
-            _userRepository.Update(user);
+            await _userRepository.UpdateAsync(user, cancellationToken);
         }
 
-        public async Task DeleteUserAsync(int id)
+        public async Task DeleteUserAsync(int id, CancellationToken cancellationToken = default)
         {
-            var user = await _userRepository.GetByIdAsync(id);
+            var user = await _userRepository.GetByIdAsync(id, cancellationToken);
             if (user != null)
             {
-                _userRepository.Remove(user);
+                await _userRepository.RemoveAsync(user, cancellationToken);
             }
         }
     }

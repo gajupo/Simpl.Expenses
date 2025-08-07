@@ -13,7 +13,7 @@ namespace Simpl.Expenses.Application.Dtos.User
         public string Email { get; set; }
 
         [StringLength(100, MinimumLength = 8)]
-        public string Password { get; set; }
+        public string? Password { get; set; }
 
         public int? RoleId { get; set; }
 

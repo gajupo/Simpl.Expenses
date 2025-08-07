@@ -18,9 +18,9 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetUserById(int id)
+        public async Task<IActionResult> GetUserById(int id, CancellationToken cancellationToken = default)
         {
-            var user = await _userService.GetUserByIdAsync(id);
+            var user = await _userService.GetUserByIdAsync(id, cancellationToken);
             if (user == null)
             {
                 return NotFound();
@@ -29,30 +29,30 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<IActionResult> GetAllUsers(CancellationToken cancellationToken = default)
         {
-            var users = await _userService.GetAllUsersAsync();
+            var users = await _userService.GetAllUsersAsync(cancellationToken);
             return Ok(users);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] CreateUserDto createUserDto)
+        public async Task<IActionResult> CreateUser([FromBody] CreateUserDto createUserDto, CancellationToken cancellationToken = default)
         {
-            var newUser = await _userService.CreateUserAsync(createUserDto);
+            var newUser = await _userService.CreateUserAsync(createUserDto, cancellationToken);
             return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDto updateUserDto)
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDto updateUserDto, CancellationToken cancellationToken = default)
         {
-            await _userService.UpdateUserAsync(id, updateUserDto);
+            await _userService.UpdateUserAsync(id, updateUserDto, cancellationToken);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
+        public async Task<IActionResult> DeleteUser(int id, CancellationToken cancellationToken = default)
         {
-            await _userService.DeleteUserAsync(id);
+            await _userService.DeleteUserAsync(id, cancellationToken);
             return NoContent();
         }
     }
