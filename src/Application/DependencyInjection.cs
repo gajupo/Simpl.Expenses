@@ -11,6 +11,16 @@ namespace Simpl.Expenses.Application
         {
             services.AddAutoMapper(typeof(MappingProfile).Assembly);
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IRoleService, RoleService>();
+            services.AddScoped<IDepartmentService, DepartmentService>();
+            services.AddScoped<ICategoryService, CategoryService>();
+            services.AddScoped<ISupplierService, SupplierService>();
+            services.AddScoped<ICostCenterService, CostCenterService>();
+            services.AddScoped<IAccountProjectService, AccountProjectService>();
+            services.AddScoped<IPlantService, PlantService>();
+            services.AddScoped<IReportTypeService, ReportTypeService>();
+            services.AddScoped<IUsoCFDIService, UsoCFDIService>();
+            services.AddScoped<IIncotermService, IncotermService>();
             return services;
         }
     }

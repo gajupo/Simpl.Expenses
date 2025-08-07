@@ -1,38 +1,59 @@
 using Microsoft.Extensions.DependencyInjection;
 using Simpl.Expenses.Infrastructure.Persistence;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Xunit;
 using Core.WebApi;
 
 namespace Simpl.Expenses.WebAPI.Tests
 {
-    public abstract class IntegrationTestBase : IClassFixture<CustomWebApplicationFactory<Program>>, IDisposable
+    public abstract class IntegrationTestBase : IClassFixture<CustomWebApplicationFactory<Program>>, IAsyncLifetime
     {
         protected readonly HttpClient _client;
-        protected readonly CustomWebApplicationFactory<Program> _factory;
-        protected readonly ApplicationDbContext _context;
+        private readonly IServiceScope _scope;
+        private readonly ApplicationDbContext _context;
+        private readonly CustomWebApplicationFactory<Program> _factory;
 
         protected IntegrationTestBase(CustomWebApplicationFactory<Program> factory)
         {
             _factory = factory;
             _client = factory.CreateClient();
-
-            // Get a scope for database operations
-            var scope = factory.Services.CreateScope();
-            _context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            _scope = factory.Services.CreateScope();
+            _context = _scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         }
 
-        protected void CleanupDatabase()
+        protected async Task<T> AddAsync<T>(T entity) where T : class
         {
-            // Clear all users but keep reference data (roles, departments)
-            _context.Users.RemoveRange(_context.Users);
-            _context.SaveChanges();
+            _context.Add(entity);
+            await _context.SaveChangesAsync();
+            return entity;
         }
 
-        public virtual void Dispose()
+        protected Task<T> RemoveEntityAsync<T>(T entity) where T : class
         {
+            _context.Set<T>().Remove(entity);
+            _context.SaveChangesAsync();
+            return Task.FromResult(entity);
+        }
+
+        protected Task<List<T>> DeleteAllAsync<T>() where T : class
+        {
+            var entities = _context.Set<T>().ToList();
+            _context.Set<T>().RemoveRange(entities);
+            _context.SaveChangesAsync();
+            return Task.FromResult(entities);
+        }
+
+        public Task InitializeAsync()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task DisposeAsync()
+        {
+            _scope?.Dispose();
             _client?.Dispose();
-            _context?.Dispose();
+            return Task.CompletedTask;
         }
     }
 }
