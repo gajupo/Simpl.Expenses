@@ -53,6 +53,15 @@ namespace Simpl.Expenses.Application
             CreateMap<Incoterm, IncotermDto>();
             CreateMap<CreateIncotermDto, Incoterm>();
             CreateMap<UpdateIncotermDto, Incoterm>();
+
+            CreateMap<Workflow, WorkflowDto>()
+                .ForMember(dest => dest.Steps, opt => opt.MapFrom(src => src.Steps));
+            CreateMap<CreateWorkflowDto, Workflow>();
+            CreateMap<UpdateWorkflowDto, Workflow>();
+
+            CreateMap<WorkflowStep, WorkflowStepDto>();
+            CreateMap<CreateWorkflowStepDto, WorkflowStep>();
+            CreateMap<UpdateWorkflowStepDto, WorkflowStep>();
         }
     }
 }

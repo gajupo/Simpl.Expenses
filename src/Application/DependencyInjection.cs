@@ -21,6 +21,8 @@ namespace Simpl.Expenses.Application
             services.AddScoped<IReportTypeService, ReportTypeService>();
             services.AddScoped<IUsoCFDIService, UsoCFDIService>();
             services.AddScoped<IIncotermService, IncotermService>();
+            services.AddScoped<IWorkflowService, WorkflowService>();
+            services.AddScoped<IWorkflowStepService, WorkflowStepService>();
             return services;
         }
     }

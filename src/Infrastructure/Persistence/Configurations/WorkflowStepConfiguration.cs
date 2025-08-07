@@ -11,7 +11,7 @@ namespace Simpl.Expenses.Infrastructure.Persistence.Configurations
         {
             builder.HasKey(ws => ws.Id);
             builder.Property(ws => ws.Name).IsRequired().HasMaxLength(100);
-            builder.HasOne(ws => ws.Workflow).WithMany().HasForeignKey(ws => ws.WorkflowId).OnDelete(DeleteBehavior.NoAction);
+            builder.HasOne(ws => ws.Workflow).WithMany(w => w.Steps).HasForeignKey(ws => ws.WorkflowId).OnDelete(DeleteBehavior.Cascade);
             builder.HasOne(ws => ws.ApproverRole).WithMany().HasForeignKey(ws => ws.ApproverRoleId).OnDelete(DeleteBehavior.NoAction);
         }
     }
