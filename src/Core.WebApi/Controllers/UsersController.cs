@@ -1,8 +1,10 @@
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Simpl.Expenses.Application.Dtos.User;
 using Simpl.Expenses.Application.Interfaces;
 using System.Threading.Tasks;
+using Simpl.Expenses.Domain.Constants;
 
 namespace Core.WebApi.Controllers
 {
@@ -11,13 +13,16 @@ namespace Core.WebApi.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IAuthService _authService;
 
-        public UsersController(IUserService userService)
+        public UsersController(IUserService userService, IAuthService authService)
         {
             _userService = userService;
+            _authService = authService;
         }
 
         [HttpGet("{id}")]
+        [Authorize(Policy = PermissionCatalog.UsersManage)]
         public async Task<IActionResult> GetUserById(int id, CancellationToken cancellationToken = default)
         {
             var user = await _userService.GetUserByIdAsync(id, cancellationToken);
@@ -29,6 +34,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = PermissionCatalog.UsersManage)]
         public async Task<IActionResult> GetAllUsers(CancellationToken cancellationToken = default)
         {
             var users = await _userService.GetAllUsersAsync(cancellationToken);
@@ -36,6 +42,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = PermissionCatalog.UsersManage)]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto createUserDto, CancellationToken cancellationToken = default)
         {
             var newUser = await _userService.CreateUserAsync(createUserDto, cancellationToken);
@@ -43,6 +50,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = PermissionCatalog.UsersManage)]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDto updateUserDto, CancellationToken cancellationToken = default)
         {
             await _userService.UpdateUserAsync(id, updateUserDto, cancellationToken);
@@ -50,9 +58,29 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = PermissionCatalog.UsersManage)]
         public async Task<IActionResult> DeleteUser(int id, CancellationToken cancellationToken = default)
         {
             await _userService.DeleteUserAsync(id, cancellationToken);
+            return NoContent();
+        }
+
+        public record AssignRolesRequest(int[] RoleIds);
+        public record SetPermissionsRequest(string[] PermissionNames);
+
+        [HttpPost("{userId}/roles")]
+        [Authorize(Policy = PermissionCatalog.UsersManage)]
+        public async Task<IActionResult> AssignRoles(int userId, [FromBody] AssignRolesRequest request, CancellationToken cancellationToken = default)
+        {
+            await _authService.AssignRolesToUserAsync(userId, request.RoleIds, cancellationToken);
+            return NoContent();
+        }
+
+        [HttpPost("{userId}/permissions")]
+        [Authorize(Policy = PermissionCatalog.PermissionsManage)]
+        public async Task<IActionResult> SetDirectPermissions(int userId, [FromBody] SetPermissionsRequest request, CancellationToken cancellationToken = default)
+        {
+            await _authService.SetDirectPermissionsForUserAsync(userId, request.PermissionNames, cancellationToken);
             return NoContent();
         }
     }

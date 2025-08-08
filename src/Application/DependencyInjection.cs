@@ -23,6 +23,7 @@ namespace Simpl.Expenses.Application
             services.AddScoped<IIncotermService, IncotermService>();
             services.AddScoped<IWorkflowService, WorkflowService>();
             services.AddScoped<IWorkflowStepService, WorkflowStepService>();
+            services.AddScoped<IAuthService, AuthService>();
             return services;
         }
     }

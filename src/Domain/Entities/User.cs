@@ -1,4 +1,6 @@
 
+using System.Collections.Generic;
+
 namespace Simpl.Expenses.Domain.Entities
 {
     public class User
@@ -14,5 +16,6 @@ namespace Simpl.Expenses.Domain.Entities
         public int? ReportsToId { get; set; }
         public User ReportsTo { get; set; }
         public bool IsActive { get; set; }
+        public ICollection<UserPermission> UserPermissions { get; set; }
     }
 }

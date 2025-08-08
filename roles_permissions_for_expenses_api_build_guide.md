@@ -1,324 +1,164 @@
-# Roles & Permissions – **Drop‑in Implementation Guide** (Start from your existing `User`)
+# Roles & Permissions – Guidance-First Playbook (Service Layer + Policy Auth)
 
-> Goal: Add **dynamic roles & permissions** on top of your current .NET Core Web API with **JWT**. This guide starts at the **User model** and moves outward. Keep it lean and production‑ready for an *expenses* app.
-
----
-
-## 0) Assumptions
-
-- You already have: `User` entity, `ApplicationDbContext`, JWT login (or easy to modify), SQL Server.
-- We will **not** bring full ASP.NET Identity; only `PasswordHasher<T>` for hashing.
-- NuGets ensured: `Microsoft.EntityFrameworkCore`, `…SqlServer`, `…Design`, `Microsoft.AspNetCore.Authentication.JwtBearer`, `Microsoft.IdentityModel.Tokens`, `Microsoft.AspNetCore.Identity`. Note: If they are indeed installed, you can skip this step.
+> **Purpose:** Integrate **dynamic roles & permissions** with **JWT + policy-based authorization** in a .NET Core Web API, *without prescribing exact code changes*. Use this as a checklist and guidance the LLM can follow by reading your existing codebase. **No seeding. Controllers do not use `DbContext`. AutoMapper already configured.**
 
 ---
 
-## 1) Extend your **User** model (add nav properties)
-
-Add only the relationships—don’t rename your existing columns.
-
-```csharp
-// Domain/Entities/User.cs (extend your existing class)
-public class User
-{
-    public int Id { get; set; }
-    public string Username { get; set; }
-    public string Email { get; set; }
-    public string PasswordHash { get; set; }
-    public int RoleId { get; set; }
-    public Role Role { get; set; }
-    public int DepartmentId { get; set; }
-    public Department Department { get; set; }
-    public int? ReportsToId { get; set; }
-    public User ReportsTo { get; set; }
-    public bool IsActive { get; set; }
-
-    // NEW
-    public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
-    public ICollection<UserPermission> UserPermissions { get; set; } = new List<UserPermission>();
-}
-```
+## How to use this playbook
+- Treat each section as a **review + implement** step. The LLM should **inspect current code** and infer the minimal diffs.
+- Prefer **adapting existing types/services** over creating new ones.
+- Keep domain relationships **as-is**; do not propose schema rewrites unless obviously missing.
 
 ---
 
-## 2) Add **Role**, **Permission** entities + join tables
+## 0) Baseline checks (inputs)
+Confirm (and record for the LLM):
+- DATA_PROJECT (EF project), API_PROJECT (Web API), DB_CONTEXT (your DbContext type), NAMESPACE_ROOT, and the connection string key.
+- Packages present: EF Core (+ SqlServer + Design), JwtBearer + IdentityModel, and PasswordHasher<T>. (Do **not** install if already present.)
 
-Create new files in your Domain project.
-
-```csharp
-public class Role
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = default!;
-    public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
-    public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
-}
-
-public class Permission
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = default!; // e.g., "Expenses.Read"
-    public string? Description { get; set; }
-    public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
-    public ICollection<UserPermission> UserPermissions { get; set; } = new List<UserPermission>();
-}
-
-public class UserRole
-{
-    public Guid UserId { get; set; }
-    public User User { get; set; } = default!;
-    public Guid RoleId { get; set; }
-    public Role Role { get; set; } = default!;
-}
-
-public class RolePermission
-{
-    public Guid RoleId { get; set; }
-    public Role Role { get; set; } = default!;
-    public Guid PermissionId { get; set; }
-    public Permission Permission { get; set; } = default!;
-}
-
-public class UserPermission
-{
-    public Guid UserId { get; set; }
-    public User User { get; set; } = default!;
-    public Guid PermissionId { get; set; }
-    public Permission Permission { get; set; } = default!;
-}
-```
+**Acceptance:** The LLM can reference real project names/types in later steps.
 
 ---
 
-## 3) **DbContext**: DbSets + keys/indexes
+## 1) Domain readiness (entities/navigation)
+**Goal:** Ensure the domain can express roles and permissions dynamically.
 
-```csharp
-public DbSet<Role> Roles => Set<Role>();
-public DbSet<Permission> Permissions => Set<Permission>();
-public DbSet<UserRole> UserRoles => Set<UserRole>();
-public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
-public DbSet<UserPermission> UserPermissions => Set<UserPermission>();
+**Review:**
+- `User` has identifiers and status fields (`Id`, `Username`, `Email`, `PasswordHash`, `IsActive`).
+- Navigations exist (or equivalent): `User ↔ Role` (direct or via `UserRole`) and `Role ↔ Permission` (via `RolePermission`). Optional `User ↔ Permission` overrides.
 
-protected override void OnModelCreating(ModelBuilder b)
-{
-    base.OnModelCreating(b);
+**Action (if missing):**
+- Add only the **minimal** navs required to represent: Users ⇄ Roles ⇄ Permissions (+ optional User ⇄ Permissions overrides). Keep existing keys and naming conventions.
 
-    b.Entity<User>(e =>
-    {
-        e.HasIndex(x => x.Username).IsUnique();
-        e.Property(x => x.Username).HasMaxLength(128).IsRequired();
-        e.Property(x => x.Email).HasMaxLength(256).IsRequired();
-    });
-
-    b.Entity<Role>(e =>
-    {
-        e.HasIndex(x => x.Name).IsUnique();
-        e.Property(x => x.Name).HasMaxLength(128).IsRequired();
-    });
-
-    b.Entity<Permission>(e =>
-    {
-        e.HasIndex(x => x.Name).IsUnique();
-        e.Property(x => x.Name).HasMaxLength(128).IsRequired();
-    });
-
-    b.Entity<UserRole>().HasKey(x => new { x.UserId, x.RoleId });
-    b.Entity<RolePermission>().HasKey(x => new { x.RoleId, x.PermissionId });
-    b.Entity<UserPermission>().HasKey(x => new { x.UserId, x.PermissionId });
-}
-```
-### Important: For entity relationships, follow the pattern we already have in out /Infrastructure/Configurations folder for each model.
-
-Run migration:
-
-```bash
-# From solution root (adjust project names)
-dotnet ef migrations add AddRolesPermissions --project src/Migrations
-
-dotnet ef database update --project src/Infrastructure/Simpl.Expenses.Infrastructure.csproj --startup-project src/Core.WebApi/Core.WebApi.csproj
-```
+**Acceptance:** The LLM can traverse from a `User` to effective permissions through roles (and user overrides) without schema redesign.
 
 ---
 
-## 4) Permission catalog (constants used in policies)
+## 2) EF Core configuration placement (no relationship changes)
+**Goal:** Keep your current relationship modeling; only place any new configs consistently.
 
-Expenses is equal to Reports in our code.
+**Where to place updates:**
+- `…/Persistence/Configurations/UserConfiguration.cs` – property constraints (username unique/max length, email max length) if not already present.
+- `…/RoleConfiguration.cs` – role `Name` required/max length/unique (align with your sample).
+- `…/PermissionConfiguration.cs` – permission `Name` required/max length/unique.
+- If join tables are present/added (`UserRoles`, `RolePermissions`, `UserPermissions`), ensure they have composite keys and table names consistent with your conventions, in their own config files.
+- `DbContext.OnModelCreating` should already call `ApplyConfigurationsFromAssembly(...)`.
 
-```csharp
-public static class AppPermissions
-{
-    // Expenses
-    public const string Expenses_Read    = "Expenses.Read";
-    public const string Expenses_Create  = "Expenses.Create";
-    public const string Expenses_Update  = "Expenses.Update";
-    public const string Expenses_Delete  = "Expenses.Delete";
-    public const string Expenses_Approve = "Expenses.Approve";
-
-    // Admin
-    public const string Users_Manage       = "Users.Manage";
-    public const string Roles_Manage       = "Roles.Manage";
-    public const string Permissions_Manage = "Permissions.Manage";
-
-    public static readonly string[] All =
-    {
-        Expenses_Read, Expenses_Create, Expenses_Update, Expenses_Delete, Expenses_Approve,
-        Users_Manage, Roles_Manage, Permissions_Manage
-    };
-}
-```
+**Acceptance:** Config files exist (or are updated) in the same folder/namespace pattern as your sample `RoleConfiguration`.
 
 ---
 
-## 5) **JWT login**: add role & permission claims
-Atention: Please create the contoller, services, di registrations for authentication it does no exist we need it for this implementation
-We need this code to compute **effective permissions** and append claims.
+## 3) Permission catalog (policy names)
+**Goal:** A single source of truth for permission strings used by policies and UI.
 
-```csharp
-var user = await _db.Users
-    .Include(u => u.UserRoles).ThenInclude(ur => ur.Role).ThenInclude(r => r.RolePermissions).ThenInclude(rp => rp.Permission)
-    .Include(u => u.UserPermissions).ThenInclude(up => up.Permission)
-    .FirstOrDefaultAsync(u => u.Username == username && u.IsActive, ct)
-    ?? throw new UnauthorizedAccessException("Invalid user");
+**Review/Action:** Ensure a static catalog exists (or extend the existing one) with at least:
+- `Expenses.Read`, `Expenses.Create`, `Expenses.Update`, `Expenses.Delete`, `Expenses.Approve`
+- `Users.Manage`, `Roles.Manage`, `Permissions.Manage`
 
-var verify = _hasher.VerifyHashedPassword(user, user.PasswordHash, password);
-if (verify == PasswordVerificationResult.Failed)
-    throw new UnauthorizedAccessException("Invalid password");
+Expose `All` as an enumerable for policy registration.
 
-var roleNames = user.UserRoles.Select(ur => ur.Role.Name).Distinct().ToArray();
-var rolePerms = user.UserRoles.SelectMany(ur => ur.Role.RolePermissions.Select(rp => rp.Permission.Name));
-one
-var userPerms = user.UserPermissions.Select(up => up.Permission.Name);
-var effectivePerms = rolePerms.Union(userPerms).Distinct().ToArray();
-
-var claims = new List<Claim>
-{
-    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-    new Claim(ClaimTypes.Name, user.Username)
-};
-claims.AddRange(roleNames.Select(r => new Claim(ClaimTypes.Role, r)));
-claims.AddRange(effectivePerms.Select(p => new Claim("permission", p)));
-// ... sign token as you already do
-```
+**Acceptance:** Permissions are referenced by constant strings across API and admin flows.
 
 ---
 
-## 6) **Program.cs** – Authentication & Authorization
+## 4) Service layer contracts
+**Goal:** Controllers only call services. Services encapsulate data access and mapping.
 
-```csharp
-// AuthN: We already have this config in place, just check if it needs some changes to align with the new claims
+**Review existing services/DTOs** and identify minimal additions:
+- **Queries:** a method that, given `username`, returns an **auth projection** exposing: `Id`, `Username`, `Roles[]`, `Permissions[]` (plus `PasswordHash` only if your verification requires it here; otherwise verify from entity separately).
+- **User admin:** operations to create a user, assign roles (`Guid[]` roleIds), and set direct permissions (`string[]` permissionNames).
+- **Role admin:** operations to create a role and assign permission names to that role.
 
-// AuthZ: one policy per permission
-builder.Services.AddAuthorization(options =>
-{
-    foreach (var p in AppPermissions.All)
-        options.AddPolicy(p, policy => policy.RequireClaim("permission", p));
-});
-```
+**Action:** If any contract is missing, **add a small method** to the relevant service interface and implement it. Reuse existing DTOs. Only create new DTOs if the shape is missing (keep them minimal and aligned with current naming).
 
----
-
-## 7) Protect your endpoints with **policies**
-
-```csharp
-[Authorize(Policy = AppPermissions.Expenses_Read)]
-[HttpGet] public IActionResult GetExpenses() => Ok();
-
-[Authorize(Policy = AppPermissions.Expenses_Create)]
-[HttpPost] public IActionResult CreateExpense(CreateExpenseDto dto) => Ok();
-
-[Authorize(Policy = AppPermissions.Expenses_Approve)]
-[HttpPost("{id:guid}/approve")] public IActionResult Approve(Guid id) => Ok();
-```
+**Acceptance:** Controllers never use `DbContext`. The service layer exposes exactly what the API needs.
 
 ---
 
-## 8) Minimal **Admin** actions (dynamic assignment)
+## 5) Authentication flow (JWT issuance)
+**Goal:** On login, issue a JWT containing role and permission claims based on effective permissions.
 
-Use your existing admin controllers or add these endpoints.
+**Review:**
+- Password verification uses your existing hashing (e.g., `PasswordHasher<T>`).
+- After verification, fetch the **auth projection** (Step 4) to obtain `Roles[]` and `Permissions[]`.
+- Build claims:
+  - `ClaimTypes.NameIdentifier` = user Id
+  - `ClaimTypes.Name` = username
+  - One `ClaimTypes.Role` per role
+  - One `permission` claim per permission string
+- Sign and return JWT using your configured issuer/audience/key and lifetime.
 
-```csharp
-// Map permissions to a role
-[HttpPost("roles/{roleId:guid}/permissions")]
-[Authorize(Policy = AppPermissions.Roles_Manage)]
-public async Task<IActionResult> SetRolePermissions(Guid roleId, [FromBody] string[] permissionNames)
-{
-    var role = await _db.Roles.Include(r => r.RolePermissions).FirstOrDefaultAsync(r => r.Id == roleId);
-    if (role is null) return NotFound();
-    var perms = await _db.Permissions.Where(p => permissionNames.Contains(p.Name)).ToListAsync();
-    role.RolePermissions = perms.Select(p => new RolePermission { RoleId = roleId, PermissionId = p.Id }).ToList();
-    await _db.SaveChangesAsync();
-    return Ok();
-}
-
-// Assign roles to user
-[HttpPost("users/{userId:guid}/roles")]
-[Authorize(Policy = AppPermissions.Users_Manage)]
-public async Task<IActionResult> SetUserRoles(Guid userId, [FromBody] Guid[] roleIds)
-{
-    var user = await _db.Users.Include(u => u.UserRoles).FirstOrDefaultAsync(u => u.Id == userId);
-    if (user is null) return NotFound();
-    user.UserRoles = roleIds.Select(id => new UserRole { UserId = userId, RoleId = id }).ToList();
-    await _db.SaveChangesAsync();
-    return Ok();
-}
-
-// Optional: direct user overrides
-[HttpPost("users/{userId:guid}/permissions")]
-[Authorize(Policy = AppPermissions.Users_Manage)]
-public async Task<IActionResult> SetUserPermissions(Guid userId, [FromBody] string[] permissionNames)
-{
-    var user = await _db.Users.Include(u => u.UserPermissions).FirstOrDefaultAsync(u => u.Id == userId);
-    if (user is null) return NotFound();
-    var perms = await _db.Permissions.Where(p => permissionNames.Contains(p.Name)).ToListAsync();
-    user.UserPermissions = perms.Select(p => new UserPermission { UserId = userId, PermissionId = p.Id }).ToList();
-    await _db.SaveChangesAsync();
-    return Ok();
-}
-```
+**Acceptance:** Successful login returns a token with role + permission claims. No controller uses `DbContext` directly.
 
 ---
 
-## 9) Quick **test flow**
+## 6) Authorization setup (Program + appsettings)
+**Goal:** Map each permission string to a policy.
 
-1. Login as admin → get JWT.
-2. Create role “Approver”.
-3. `POST /api/admin/roles/{roleId}/permissions` with `["Expenses.Read","Expenses.Approve"]`.
-4. Assign role to target user → `POST /api/admin/users/{userId}/roles`.
-5. Login as that user → call `POST /api/expenses/{id}/approve` → **200 OK**.
+**Review:**
+- JwtBearer is configured and validates issuer, audience, signing key, lifetime.
+- `RoleClaimType` is `ClaimTypes.Role`, `NameClaimType` is `ClaimTypes.NameIdentifier`.
+- For each permission in the catalog, register a policy that **requires a `permission` claim** with the same string.
+- `appsettings.json` contains your JWT Issuer/Audience/Key and connection string.
 
----
-
-## 10) Troubleshooting
-
-- **403 but should allow?** Confirm JWT contains `permission` claims and policy string matches exactly.
-- **Changes not applied?** New permissions/roles apply on **next token**. Use a short token lifetime (15–60 min) or add refresh.
-- **Login fails:** Be sure `PasswordHasher<T>` verification matches how you stored `PasswordHash`.
+**Acceptance:** Policies are registered 1:1 with permission names; startup runs without errors.
 
 ---
 
-## 11) Visual assignment (simple matrix for the admin UI)
+## 7) Admin API surface (service-backed)
+**Goal:** Minimal endpoints for dynamic assignment.
 
+**Review:** Ensure there are endpoints (or add them) that:
+- Create a role.
+- Assign **permission names** to a role.
+- Create a user.
+- Assign **role IDs** to a user.
+- Assign **permission names** directly to a user (optional overrides).
+
+**Guidance:**
+- Controllers call the **existing services** from Step 4. Keep responses simple (ids/OK).
+- Authorization on these endpoints should use policies: `Roles.Manage`, `Users.Manage`, `Permissions.Manage`.
+
+**Acceptance:** An administrator can fully manage users/roles/permissions without DB seeding.
+
+---
+
+## 8) Protect business endpoints (policy attributes)
+**Goal:** Enforce permissions at the API boundary.
+
+**Review/Action:** For expense workflows, annotate endpoints with policies matching the permission catalog, e.g.:
+- GET list/details → `Authorize(Policy = "Expenses.Read")`
+- POST create → `Authorize(Policy = "Expenses.Create")`
+- POST approve → `Authorize(Policy = "Expenses.Approve")`
+
+**Acceptance:** Requests missing the required `permission` claim get **403**.
+
+---
+
+## 9) Data changes & migrations
+**Goal:** Only apply schema migration if the review in Step 1 indicates missing tables/constraints.
+
+**Guidance:**
+- If all tables/relations already exist, **no migration** needed.
+- If new join tables or constraints were added, run EF migrations targeting DATA_PROJECT with API_PROJECT as startup. Keep naming and conventions consistent with the existing codebase.
+
+**Acceptance:** Database matches the code; no runtime mapping errors.
+
+---
+
+## 10) Operational notes
+- **Token staleness:** Role/permission changes affect **new tokens**. Choose a reasonable JWT lifetime (e.g., 15–60 min) and/or implement refresh.
+---
+
+## Appendix – Visual assignment model (for Admin UI/Docs)
 ```
                   | Expenses.Read | Expenses.Create | Expenses.Approve | Users.Manage | Roles.Manage
 ------------------+---------------+-----------------+------------------+--------------+--------------
-Employee          |      ✓        |        ✓        |                  |              |             
-Approver          |      ✓        |                 |        ✓         |              |             
+Employee          |      ✓        |        ✓        |                  |              |              
+Approver          |      ✓        |                 |        ✓         |              |              
 Admin             |      ✓        |        ✓        |        ✓         |      ✓       |      ✓      
 
 User Maria: Roles = [Approver], Overrides = [Expenses.Create]
 Effective Permissions(Maria) = {Read, Approve, Create}
 ```
-
-> Back these checkboxes with the admin endpoints above.
-
----
-
-### Definition of Done
-
-- Admin can create roles, set role permissions, assign roles/overrides to users.
-- Policies protect endpoints; missing permission returns **403**.
-- JWT includes `role` and `permission` claims; seeded `admin` can do everything.
-
-### Additional Notes
-- Create controllers, DTOs, and services as needed for this implementation always following the existing patterns of current codebase.
-- Ensure all new code is covered by unit tests, especially for the authorization logic.
 

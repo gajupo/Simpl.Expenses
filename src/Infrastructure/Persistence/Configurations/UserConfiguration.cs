@@ -1,4 +1,3 @@
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Simpl.Expenses.Domain.Entities;
@@ -18,6 +17,10 @@ namespace Simpl.Expenses.Infrastructure.Persistence.Configurations
             builder.HasOne(u => u.Role).WithMany().HasForeignKey(u => u.RoleId).OnDelete(DeleteBehavior.NoAction);
             builder.HasOne(u => u.Department).WithMany().HasForeignKey(u => u.DepartmentId).OnDelete(DeleteBehavior.NoAction);
             builder.HasOne(u => u.ReportsTo).WithMany().HasForeignKey(u => u.ReportsToId).OnDelete(DeleteBehavior.NoAction);
+
+            builder.HasMany(u => u.UserPermissions)
+                .WithOne(up => up.User)
+                .HasForeignKey(up => up.UserId);
         }
     }
 }

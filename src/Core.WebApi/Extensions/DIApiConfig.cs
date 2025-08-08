@@ -5,6 +5,8 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using Serilog;
+using System.Security.Claims;
+using Simpl.Expenses.Domain.Constants;
 
 namespace Core.WebApi.Extensions
 {
@@ -48,6 +50,21 @@ namespace Core.WebApi.Extensions
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
                     };
                 });
+
+            services.AddAuthorization(options =>
+            {
+                options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .Build();
+
+                foreach (var perm in PermissionCatalog.All)
+                {
+                    options.AddPolicy(perm, policy =>
+                        policy.RequireClaim("permission", perm));
+                }
+
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+            });
         }
 
         public static void ConfigureSwagger(this IServiceCollection services)

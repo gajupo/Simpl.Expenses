@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Simpl.Expenses.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Simpl.Expenses.Infrastructure.Persistence;
 namespace Simpl.Expenses.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250808175922_AddPermissionsModel")]
+    partial class AddPermissionsModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -45,7 +48,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AccountProjects", (string)null);
+                    b.ToTable("AccountProjects");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.AdvancePaymentDetail", b =>
@@ -60,7 +63,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasKey("ReportId");
 
-                    b.ToTable("AdvancePaymentDetails", (string)null);
+                    b.ToTable("AdvancePaymentDetails");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.ApprovalLog", b =>
@@ -97,7 +100,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ApprovalLogs", (string)null);
+                    b.ToTable("ApprovalLogs");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.Budget", b =>
@@ -131,7 +134,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
                         .IsUnique()
                         .HasFilter("[CostCenterId] IS NOT NULL AND [AccountProjectId] IS NOT NULL");
 
-                    b.ToTable("Budgets", (string)null);
+                    b.ToTable("Budgets");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.BudgetConsumption", b =>
@@ -169,7 +172,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
                         .IsUnique()
                         .HasFilter("[CostCenterId] IS NOT NULL AND [AccountProjectId] IS NOT NULL");
 
-                    b.ToTable("BudgetConsumptions", (string)null);
+                    b.ToTable("BudgetConsumptions");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.Category", b =>
@@ -192,7 +195,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Categories", (string)null);
+                    b.ToTable("Categories");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.CostCenter", b =>
@@ -218,7 +221,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CostCenters", (string)null);
+                    b.ToTable("CostCenters");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.Department", b =>
@@ -241,7 +244,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasIndex("CostCenterId");
 
-                    b.ToTable("Departments", (string)null);
+                    b.ToTable("Departments");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.Incoterm", b =>
@@ -264,7 +267,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Incoterms", (string)null);
+                    b.ToTable("Incoterms");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.Permission", b =>
@@ -285,7 +288,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Permissions", (string)null);
+                    b.ToTable("Permissions");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.Plant", b =>
@@ -303,7 +306,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Plants", (string)null);
+                    b.ToTable("Plants");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.PurchaseOrderDetail", b =>
@@ -333,7 +336,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasIndex("UsoCfdiId");
 
-                    b.ToTable("PurchaseOrderDetails", (string)null);
+                    b.ToTable("PurchaseOrderDetails");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.ReimbursementDetail", b =>
@@ -353,7 +356,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasKey("ReportId");
 
-                    b.ToTable("ReimbursementDetails", (string)null);
+                    b.ToTable("ReimbursementDetails");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.Report", b =>
@@ -434,7 +437,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Reports", (string)null);
+                    b.ToTable("Reports");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.ReportAttachment", b =>
@@ -480,7 +483,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasIndex("UploadedByUserId");
 
-                    b.ToTable("ReportAttachments", (string)null);
+                    b.ToTable("ReportAttachments");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.ReportState", b =>
@@ -510,7 +513,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasIndex("WorkflowId");
 
-                    b.ToTable("ReportStates", (string)null);
+                    b.ToTable("ReportStates");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.ReportType", b =>
@@ -531,7 +534,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("ReportTypes", (string)null);
+                    b.ToTable("ReportTypes");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.Role", b =>
@@ -552,7 +555,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Roles", (string)null);
+                    b.ToTable("Roles");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.RolePermission", b =>
@@ -567,7 +570,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasIndex("PermissionId");
 
-                    b.ToTable("RolePermissions", (string)null);
+                    b.ToTable("RolePermissions");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.Setting", b =>
@@ -583,7 +586,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasKey("Key");
 
-                    b.ToTable("Settings", (string)null);
+                    b.ToTable("Settings");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.Supplier", b =>
@@ -622,7 +625,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
                     b.HasIndex("Rfc")
                         .IsUnique();
 
-                    b.ToTable("Suppliers", (string)null);
+                    b.ToTable("Suppliers");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.User", b =>
@@ -674,7 +677,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
                     b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.UserPermission", b =>
@@ -694,7 +697,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasIndex("PermissionId");
 
-                    b.ToTable("UserPermissions", (string)null);
+                    b.ToTable("UserPermissions");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.UserPlant", b =>
@@ -709,7 +712,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasIndex("PlantId");
 
-                    b.ToTable("UserPlants", (string)null);
+                    b.ToTable("UserPlants");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.UsoCFDI", b =>
@@ -732,7 +735,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("UsoCFDIs", (string)null);
+                    b.ToTable("UsoCFDIs");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.Workflow", b =>
@@ -758,7 +761,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Workflows", (string)null);
+                    b.ToTable("Workflows");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.WorkflowProject", b =>
@@ -773,7 +776,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("WorkflowProjects", (string)null);
+                    b.ToTable("WorkflowProjects");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.WorkflowStep", b =>
@@ -804,7 +807,7 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
                     b.HasIndex("WorkflowId");
 
-                    b.ToTable("WorkflowSteps", (string)null);
+                    b.ToTable("WorkflowSteps");
                 });
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.AdvancePaymentDetail", b =>

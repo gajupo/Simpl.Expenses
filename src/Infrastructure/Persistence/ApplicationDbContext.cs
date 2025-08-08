@@ -35,10 +35,14 @@ namespace Simpl.Expenses.Infrastructure.Persistence
         public DbSet<PurchaseOrderDetail> PurchaseOrderDetails { get; set; }
         public DbSet<AdvancePaymentDetail> AdvancePaymentDetails { get; set; }
         public DbSet<BudgetConsumption> BudgetConsumptions { get; set; }
+        public DbSet<Permission> Permissions { get; set; }
+        public DbSet<RolePermission> RolePermissions { get; set; }
+        public DbSet<UserPermission> UserPermissions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
             // Apply configurations from the current assembly
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         }
