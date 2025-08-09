@@ -33,7 +33,7 @@ namespace Core.WebApi
             {
                 var app = builder.Build();
                 // Ensure baseline data is present (permissions, Admin role)
-                await DbSeeder.EnsureSeededAsync(app.Services, cancellationToken);
+                // await DbSeeder.EnsureSeededAsync(app.Services, cancellationToken);
                 await ConfigureApplication(app, cancellationToken);
             }
             catch (Exception ex)
@@ -67,7 +67,7 @@ namespace Core.WebApi
             // add memory cache
             builder.Services.AddMemoryCache();
             // Add test authentication if in Testing environment
-            builder.Services.AddTestingAuthentication(builder.Environment);
+            // builder.Services.AddTestingAuthentication(builder.Environment);
         }
 
         private static async Task ConfigureApplication(
@@ -96,7 +96,7 @@ namespace Core.WebApi
 
             app.MapControllers();
             // Optionally synthesize an authenticated Admin user in Testing
-            app.UseTestingIdentity(app.Environment);
+            // app.UseTestingIdentity(app.Environment);
             await app.RunAsync(cancellationToken);
         }
     }

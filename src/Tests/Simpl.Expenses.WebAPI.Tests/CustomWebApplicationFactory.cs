@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Simpl.Expenses.Infrastructure.Persistence;
 using System.Linq;
 using Simpl.Expenses.Domain.Entities;
+using Simpl.Expenses.Domain.Constants;
 
 namespace Simpl.Expenses.WebAPI.Tests
 {
@@ -41,12 +42,14 @@ namespace Simpl.Expenses.WebAPI.Tests
 
         private static void SeedTestData(ApplicationDbContext context)
         {
-            var roles = new[]
+            var defaultRoles = SeedAllPermissions(context);
+
+            var adminRole = SeedAdminRoleWithDefaultPermissions(context);
+
+            var userRole = SeedUserRoleWithCustomPermisions(context, new List<Permission>
             {
-                new Role { Name = "Admin" },
-                new Role { Name = "User" }
-            };
-            context.Roles.AddRange(roles);
+                new Permission { Name = PermissionCatalog.ExpensesRead },
+            });
 
             var costCenters = new[]
             {
@@ -99,11 +102,55 @@ namespace Simpl.Expenses.WebAPI.Tests
             );
 
             context.Users.AddRange(
-                new User { Username = "admin", Email = "admin@test.com", PasswordHash = "test", RoleId = roles[0].Id, DepartmentId = departments[0].Id, IsActive = true },
-                new User { Username = "user", Email = "user@test.com", PasswordHash = "test", RoleId = roles[1].Id, DepartmentId = departments[1].Id, IsActive = true }
+                new User { Username = "padmin", Email = "padmin@test.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"), RoleId = adminRole.Item1.Id, DepartmentId = departments[0].Id, IsActive = true },
+                new User { Username = "testuser", Email = "user@test.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"), RoleId = userRole.Item1.Id, DepartmentId = departments[1].Id, IsActive = true }
             );
 
             context.SaveChanges();
+        }
+
+        private static List<Permission> SeedAllPermissions(ApplicationDbContext context)
+        {
+            var permissions = PermissionCatalog.All.Select(p => new Permission { Name = p });
+            context.Permissions.AddRange(permissions);
+            context.SaveChanges();
+            return permissions.ToList();
+        }
+
+        private static (Role, List<RolePermission>) SeedAdminRoleWithDefaultPermissions(ApplicationDbContext context)
+        {
+            var adminRole = new Role { Name = "Admin" };
+            context.Roles.Add(adminRole);
+            context.SaveChanges();
+
+            var adminPermissions = PermissionCatalog.All.Select(p => new RolePermission
+            {
+                RoleId = adminRole.Id,
+                PermissionId = context.Permissions.SingleOrDefault(x => x.Name == p).Id
+            });
+
+            context.RolePermissions.AddRange(adminPermissions);
+            context.SaveChanges();
+
+            return (adminRole, adminPermissions.ToList());
+        }
+
+        private static (Role, List<RolePermission>) SeedUserRoleWithCustomPermisions(ApplicationDbContext context, List<Permission> customPermissions)
+        {
+            var userRole = new Role { Name = "User" };
+            context.Roles.Add(userRole);
+            context.SaveChanges();
+
+            var userPermissions = customPermissions.Select(p => new RolePermission
+            {
+                RoleId = userRole.Id,
+                PermissionId = context.Permissions.SingleOrDefault(x => x.Name == p.Name).Id
+            });
+
+            context.RolePermissions.AddRange(userPermissions);
+            context.SaveChanges();
+
+            return (userRole, userPermissions.ToList());
         }
     }
 }

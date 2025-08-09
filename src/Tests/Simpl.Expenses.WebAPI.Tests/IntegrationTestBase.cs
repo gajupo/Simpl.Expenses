@@ -4,6 +4,8 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Xunit;
 using Core.WebApi;
+using System.Net.Http.Json;
+using System.Net.Http.Headers;
 
 namespace Simpl.Expenses.WebAPI.Tests
 {
@@ -14,12 +16,29 @@ namespace Simpl.Expenses.WebAPI.Tests
         private readonly ApplicationDbContext _context;
         private readonly CustomWebApplicationFactory<Program> _factory;
 
+        private record TokenResponse(string token);
         protected IntegrationTestBase(CustomWebApplicationFactory<Program> factory)
         {
             _factory = factory;
             _client = factory.CreateClient();
             _scope = factory.Services.CreateScope();
             _context = _scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        }
+
+        public virtual Task InitializeAsync()
+        {
+            return Task.CompletedTask;
+        }
+
+        protected async Task LoginAsAdminAsync()
+        {
+            var request = new { Username = "padmin", Password = "password" };
+            var response = await _client.PostAsJsonAsync("/api/auth/login", request);
+            response.EnsureSuccessStatusCode();
+
+            // create a record tokenReponse with a token property to store the deserialized response from api
+            TokenResponse tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>();
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenResponse.token);
         }
 
         protected async Task<T> AddAsync<T>(T entity) where T : class
@@ -42,11 +61,6 @@ namespace Simpl.Expenses.WebAPI.Tests
             _context.Set<T>().RemoveRange(entities);
             _context.SaveChangesAsync();
             return Task.FromResult(entities);
-        }
-
-        public Task InitializeAsync()
-        {
-            return Task.CompletedTask;
         }
 
         public Task DisposeAsync()
