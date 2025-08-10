@@ -62,6 +62,10 @@ namespace Simpl.Expenses.Application
             CreateMap<WorkflowStep, WorkflowStepDto>();
             CreateMap<CreateWorkflowStepDto, WorkflowStep>();
             CreateMap<UpdateWorkflowStepDto, WorkflowStep>();
+
+            CreateMap<Budget, BudgetDto>();
+            CreateMap<CreateBudgetDto, Budget>();
+            CreateMap<UpdateBudgetDto, Budget>();
         }
     }
 }
