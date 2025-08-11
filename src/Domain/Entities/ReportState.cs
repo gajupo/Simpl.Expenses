@@ -1,4 +1,5 @@
 
+using Simpl.Expenses.Domain.Enums;
 using System;
 
 namespace Simpl.Expenses.Domain.Entities
@@ -11,7 +12,7 @@ namespace Simpl.Expenses.Domain.Entities
         public Workflow Workflow { get; set; }
         public int CurrentStepId { get; set; }
         public WorkflowStep CurrentStep { get; set; }
-        public string Status { get; set; }
+        public ReportStatus Status { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
 }
