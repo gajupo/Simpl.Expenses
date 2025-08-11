@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Simpl.Expenses.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Simpl.Expenses.Infrastructure.Persistence;
 namespace Simpl.Expenses.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250811190241_MoveCostCenterIdToReport")]
+    partial class MoveCostCenterIdToReport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -305,6 +308,9 @@ namespace Simpl.Expenses.Infrastructure.Migrations
                     b.Property<int>("ReportId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("AccountProjectId")
+                        .HasColumnType("int");
+
                     b.Property<int>("IncotermId")
                         .HasColumnType("int");
 
@@ -312,6 +318,8 @@ namespace Simpl.Expenses.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("ReportId");
+
+                    b.HasIndex("AccountProjectId");
 
                     b.HasIndex("IncotermId");
 
@@ -355,9 +363,6 @@ namespace Simpl.Expenses.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("AccountProjectId")
-                        .HasColumnType("int");
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18, 2)");
@@ -413,8 +418,6 @@ namespace Simpl.Expenses.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AccountProjectId");
 
                     b.HasIndex("CategoryId");
 
@@ -886,6 +889,11 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.PurchaseOrderDetail", b =>
                 {
+                    b.HasOne("Simpl.Expenses.Domain.Entities.AccountProject", "AccountProject")
+                        .WithMany()
+                        .HasForeignKey("AccountProjectId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Simpl.Expenses.Domain.Entities.Incoterm", "Incoterm")
                         .WithMany()
                         .HasForeignKey("IncotermId")
@@ -903,6 +911,8 @@ namespace Simpl.Expenses.Infrastructure.Migrations
                         .HasForeignKey("UsoCfdiId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.Navigation("AccountProject");
 
                     b.Navigation("Incoterm");
 
@@ -924,11 +934,6 @@ namespace Simpl.Expenses.Infrastructure.Migrations
 
             modelBuilder.Entity("Simpl.Expenses.Domain.Entities.Report", b =>
                 {
-                    b.HasOne("Simpl.Expenses.Domain.Entities.AccountProject", "AccountProject")
-                        .WithMany()
-                        .HasForeignKey("AccountProjectId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("Simpl.Expenses.Domain.Entities.Category", "Category")
                         .WithMany()
                         .HasForeignKey("CategoryId")
@@ -963,8 +968,6 @@ namespace Simpl.Expenses.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
-
-                    b.Navigation("AccountProject");
 
                     b.Navigation("Category");
 

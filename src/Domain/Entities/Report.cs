@@ -24,5 +24,11 @@ namespace Simpl.Expenses.Domain.Entities
         public string AccountNumber { get; set; }
         public string Clabe { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        public int CostCenterId { get; set; }
+        public CostCenter CostCenter { get; set; }
+
+        public int? AccountProjectId { get; set; }
+        public AccountProject AccountProject { get; set; }
     }
 }
