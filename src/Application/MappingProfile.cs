@@ -66,6 +66,12 @@ namespace Simpl.Expenses.Application
             CreateMap<Budget, BudgetDto>();
             CreateMap<CreateBudgetDto, Budget>();
             CreateMap<UpdateBudgetDto, Budget>();
+
+            CreateMap<BudgetConsumption, BudgetConsumptionDto>()
+                .ForMember(dest => dest.ReportType, opt => opt.MapFrom(src => src.Report.ReportType.Name))
+                .ForMember(dest => dest.ReportAmount, opt => opt.MapFrom(src => src.Report.Amount))
+                .ForMember(dest => dest.PlantName, opt => opt.MapFrom(src => src.Report.Plant.Name))
+                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Report.Category.Name));
         }
     }
 }

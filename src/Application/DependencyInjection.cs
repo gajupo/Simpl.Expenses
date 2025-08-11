@@ -25,6 +25,7 @@ namespace Simpl.Expenses.Application
             services.AddScoped<IWorkflowStepService, WorkflowStepService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IBudgetService, BudgetService>();
+            services.AddScoped<IBudgetConsumptionService, BudgetConsumptionService>();
             return services;
         }
     }

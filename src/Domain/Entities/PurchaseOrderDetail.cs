@@ -7,7 +7,7 @@ namespace Simpl.Expenses.Domain.Entities
         public Report Report { get; set; }
         public int CostCenterId { get; set; }
         public CostCenter CostCenter { get; set; }
-        public int AccountProjectId { get; set; }
+        public int? AccountProjectId { get; set; }
         public AccountProject AccountProject { get; set; }
         public int UsoCfdiId { get; set; }
         public UsoCFDI UsoCfdi { get; set; }
