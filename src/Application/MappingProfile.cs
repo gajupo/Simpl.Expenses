@@ -2,6 +2,7 @@
 using AutoMapper;
 using Simpl.Expenses.Application.Dtos;
 using Simpl.Expenses.Application.Dtos.User;
+using Simpl.Expenses.Application.Dtos.Report;
 using Simpl.Expenses.Domain.Entities;
 
 namespace Simpl.Expenses.Application
@@ -62,6 +63,25 @@ namespace Simpl.Expenses.Application
             CreateMap<WorkflowStep, WorkflowStepDto>();
             CreateMap<CreateWorkflowStepDto, WorkflowStep>();
             CreateMap<UpdateWorkflowStepDto, WorkflowStep>();
+
+            CreateMap<Report, ReportDto>().ReverseMap();
+            CreateMap<CreateReportDto, Report>();
+            CreateMap<UpdateReportDto, Report>()
+                .ForMember(dest => dest.PurchaseOrderDetail, opt => opt.Ignore())
+                .ForMember(dest => dest.AdvancePaymentDetail, opt => opt.Ignore())
+                .ForMember(dest => dest.ReimbursementDetail, opt => opt.Ignore());
+
+            CreateMap<PurchaseOrderDetail, PurchaseOrderDetailDto>().ReverseMap();
+            CreateMap<CreatePurchaseOrderDetailDto, PurchaseOrderDetail>();
+            CreateMap<UpdatePurchaseOrderDetailDto, PurchaseOrderDetail>();
+
+            CreateMap<AdvancePaymentDetail, AdvancePaymentDetailDto>().ReverseMap();
+            CreateMap<CreateAdvancePaymentDetailDto, AdvancePaymentDetail>();
+            CreateMap<UpdateAdvancePaymentDetailDto, AdvancePaymentDetail>();
+
+            CreateMap<ReimbursementDetail, ReimbursementDetailDto>().ReverseMap();
+            CreateMap<CreateReimbursementDetailDto, ReimbursementDetail>();
+            CreateMap<UpdateReimbursementDetailDto, ReimbursementDetail>();
 
             CreateMap<Budget, BudgetDto>();
             CreateMap<CreateBudgetDto, Budget>();

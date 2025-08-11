@@ -1,9 +1,8 @@
-
 using System;
 
-namespace Simpl.Expenses.Domain.Entities
+namespace Simpl.Expenses.Application.Dtos.Report
 {
-    public class Report
+    public class ReportDto
     {
         public int Id { get; set; }
         public string ReportNumber { get; set; }
@@ -11,28 +10,19 @@ namespace Simpl.Expenses.Domain.Entities
         public decimal Amount { get; set; }
         public string Currency { get; set; }
         public int UserId { get; set; }
-        public User User { get; set; }
         public int ReportTypeId { get; set; }
-        public ReportType ReportType { get; set; }
         public int PlantId { get; set; }
-        public Plant Plant { get; set; }
         public int CategoryId { get; set; }
-        public Category Category { get; set; }
         public int? SupplierId { get; set; }
-        public Supplier Supplier { get; set; }
         public string BankName { get; set; }
         public string AccountNumber { get; set; }
         public string Clabe { get; set; }
         public DateTime CreatedAt { get; set; }
-
         public int CostCenterId { get; set; }
-        public CostCenter CostCenter { get; set; }
-
         public int? AccountProjectId { get; set; }
-        public AccountProject AccountProject { get; set; }
 
-        public PurchaseOrderDetail? PurchaseOrderDetail { get; set; }
-        public AdvancePaymentDetail? AdvancePaymentDetail { get; set; }
-        public ReimbursementDetail? ReimbursementDetail { get; set; }
+        public PurchaseOrderDetailDto PurchaseOrderDetail { get; set; }
+        public AdvancePaymentDetailDto AdvancePaymentDetail { get; set; }
+        public ReimbursementDetailDto ReimbursementDetail { get; set; }
     }
 }

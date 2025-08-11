@@ -1,4 +1,3 @@
-
 using Microsoft.EntityFrameworkCore;
 using Simpl.Expenses.Application.Interfaces;
 using Simpl.Expenses.Infrastructure.Persistence;
@@ -40,8 +39,14 @@ namespace Simpl.Expenses.Infrastructure.Repositories
 
         public async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
         {
-            _dbSet.Attach(entity);
-            _context.Entry(entity).State = EntityState.Modified;
+            var entry = _context.Entry(entity);
+
+            if (entry.State == EntityState.Detached)
+            {
+                _dbSet.Attach(entity);
+                entry.State = EntityState.Modified;
+            }
+
             await _context.SaveChangesAsync(cancellationToken);
         }
 

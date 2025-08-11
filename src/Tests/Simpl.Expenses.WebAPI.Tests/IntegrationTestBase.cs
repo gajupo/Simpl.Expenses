@@ -6,6 +6,9 @@ using Xunit;
 using Core.WebApi;
 using System.Net.Http.Json;
 using System.Net.Http.Headers;
+using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
+using AutoMapper;
 
 namespace Simpl.Expenses.WebAPI.Tests
 {
@@ -46,6 +49,11 @@ namespace Simpl.Expenses.WebAPI.Tests
             _context.Add(entity);
             await _context.SaveChangesAsync();
             return entity;
+        }
+
+        protected async Task<T?> FindAsync<T>(Expression<Func<T, bool>> predicate) where T : class
+        {
+            return await _context.Set<T>().FirstOrDefaultAsync(predicate);
         }
 
         protected Task<T> RemoveEntityAsync<T>(T entity) where T : class

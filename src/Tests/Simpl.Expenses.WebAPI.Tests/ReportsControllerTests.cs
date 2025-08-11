@@ -1,0 +1,300 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
+using Simpl.Expenses.Application.Dtos.Report;
+using Simpl.Expenses.Domain.Entities;
+using Xunit;
+using System.Collections.Generic;
+using Core.WebApi;
+using System.Linq;
+
+namespace Simpl.Expenses.WebAPI.Tests
+{
+    public class ReportsControllerTests : IntegrationTestBase
+    {
+        public ReportsControllerTests(CustomWebApplicationFactory<Program> factory)
+            : base(factory)
+        {
+        }
+
+        public override async Task InitializeAsync()
+        {
+            await base.InitializeAsync();
+            await LoginAsAdminAsync();
+        }
+
+        [Fact]
+        public async Task CreateReport_WithPurchaseOrder_CreatesReportSuccessfully()
+        {
+            // Arrange
+            var user = await FindAsync<User>(u => u.Username == "padmin");
+            var reportType = await FindAsync<ReportType>(rt => rt.Name == "Purchase Order");
+            var plant = await FindAsync<Plant>(p => p.Name == "Plant 1");
+            var category = await FindAsync<Category>(c => c.Name == "Travel");
+            var costCenter = await FindAsync<CostCenter>(cc => cc.Code == "CC1");
+            var usoCfdi = await FindAsync<UsoCFDI>(u => u.Clave == "G01");
+            var incoterm = await FindAsync<Incoterm>(i => i.Clave == "FOB");
+
+            var createReportDto = new CreateReportDto
+            {
+                Name = "Test Report",
+                Amount = 100.50m,
+                Currency = "USD",
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                BankName = "Test Bank",
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678",
+                PurchaseOrderDetail = new CreatePurchaseOrderDetailDto
+                {
+                    UsoCfdiId = usoCfdi.Id,
+                    IncotermId = incoterm.Id
+                }
+            };
+
+            // Act
+            var response = await _client.PostAsJsonAsync("/api/reports", createReportDto);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+            var reportDto = await response.Content.ReadFromJsonAsync<ReportDto>();
+            Assert.NotNull(reportDto);
+            Assert.Equal(createReportDto.Name, reportDto.Name);
+            Assert.NotNull(reportDto.PurchaseOrderDetail);
+        }
+
+        [Fact]
+        public async Task GetReportById_WhenReportExists_ReturnsOk()
+        {
+            // Arrange
+            var report = await CreateTestReport();
+
+            // Act
+            var response = await _client.GetAsync($"/api/reports/{report.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var reportDto = await response.Content.ReadFromJsonAsync<ReportDto>();
+            Assert.NotNull(reportDto);
+            Assert.Equal(report.Id, reportDto.Id);
+        }
+
+        [Fact]
+        public async Task GetAllReports_ReturnsOk()
+        {
+            // Arrange
+            await CreateTestReport();
+
+            // Act
+            var response = await _client.GetAsync("/api/reports");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var reports = await response.Content.ReadFromJsonAsync<List<ReportDto>>();
+            Assert.NotNull(reports);
+            Assert.True(reports.Count > 0);
+        }
+
+        [Fact]
+        public async Task UpdateReport_WithValidData_UpdatesReport()
+        {
+            // Arrange
+            var report = await CreateTestReport();
+            var plant = await FindAsync<Plant>(p => p.Name == "Plant 2");
+            var category = await FindAsync<Category>(c => c.Name == "Office Supplies");
+            var costCenter = await FindAsync<CostCenter>(cc => cc.Code == "CC2");
+
+            var updateDto = new UpdateReportDto
+            {
+                Name = "Updated Report Name",
+                Amount = 300.00m,
+                Currency = "GBP",
+                UserId = report.UserId,
+                ReportTypeId = report.ReportTypeId,
+                PlantId = plant.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                BankName = report.BankName,
+                AccountNumber = report.AccountNumber,
+                Clabe = report.Clabe,
+                ReimbursementDetail = new UpdateReimbursementDetailDto
+                {
+                    EmployeeName = "Updated Employee",
+                    EmployeeNumber = "E456"
+                }
+            };
+
+            // Act
+            var response = await _client.PutAsJsonAsync($"/api/reports/{report.Id}", updateDto);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+            // Verify update
+            var getResponse = await _client.GetAsync($"/api/reports/{report.Id}");
+            getResponse.EnsureSuccessStatusCode();
+            var updatedReport = await getResponse.Content.ReadFromJsonAsync<ReportDto>();
+            Assert.NotNull(updatedReport);
+            Assert.Equal(updateDto.Name, updatedReport.Name);
+            Assert.Equal(updateDto.Amount, updatedReport.Amount);
+            Assert.Equal(updateDto.Currency, updatedReport.Currency);
+            Assert.Equal(updateDto.BankName, updatedReport.BankName);
+            Assert.Equal(updateDto.AccountNumber, updatedReport.AccountNumber);
+            Assert.Equal(updateDto.Clabe, updatedReport.Clabe);
+            Assert.Equal(updateDto.ReimbursementDetail.EmployeeName, updatedReport.ReimbursementDetail.EmployeeName);
+            Assert.Equal(updateDto.ReimbursementDetail.EmployeeNumber, updatedReport.ReimbursementDetail.EmployeeNumber);
+        }
+
+        [Fact]
+        public async Task UpdateReport_WithValidDataOfPurchaseOrder_UpdatesReport()
+        {
+            // Arrange
+            var report = await CreateTestReport();
+            var usoCfdi = await FindAsync<UsoCFDI>(u => u.Clave == "G01");
+            var incoterm = await FindAsync<Incoterm>(i => i.Clave == "CIF");
+            var accountProject = await FindAsync<AccountProject>(ap => ap.Code == "AP1");
+
+            var updateDto = new UpdateReportDto
+            {
+                Name = "Updated Purchase Order Report",
+                Amount = 500.00m,
+                Currency = "USD",
+                UserId = report.UserId,
+                ReportTypeId = report.ReportTypeId,
+                PlantId = report.PlantId,
+                CategoryId = report.CategoryId,
+                CostCenterId = report.CostCenterId,
+                BankName = report.BankName,
+                AccountNumber = report.AccountNumber,
+                Clabe = report.Clabe,
+                AccountProjectId = accountProject.Id,
+                PurchaseOrderDetail = new UpdatePurchaseOrderDetailDto
+                {
+                    UsoCfdiId = usoCfdi.Id,
+                    IncotermId = incoterm.Id
+                }
+            };
+
+            // Act
+            var response = await _client.PutAsJsonAsync($"/api/reports/{report.Id}", updateDto);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+            // Verify update
+            var getResponse = await _client.GetAsync($"/api/reports/{report.Id}");
+            getResponse.EnsureSuccessStatusCode();
+            var updatedReport = await getResponse.Content.ReadFromJsonAsync<ReportDto>();
+            Assert.NotNull(updatedReport);
+            Assert.Equal(updateDto.Name, updatedReport.Name);
+            Assert.Equal(updateDto.Amount, updatedReport.Amount);
+            Assert.Equal(updateDto.Currency, updatedReport.Currency);
+            Assert.NotNull(updatedReport.PurchaseOrderDetail);
+            Assert.Equal(usoCfdi.Id, updatedReport.PurchaseOrderDetail.UsoCfdiId);
+            Assert.Equal(incoterm.Id, updatedReport.PurchaseOrderDetail.IncotermId);
+            Assert.Equal(accountProject.Id, updatedReport.AccountProjectId);
+        }
+
+        [Fact]
+        public async Task UpdateReport_WithValidDataOfAdvancePayment_UpdatesReport()
+        {
+            // Arrange
+            var report = await CreateTestReport();
+            var accountProject = await FindAsync<AccountProject>(ap => ap.Code == "AP2");
+
+            var updateDto = new UpdateReportDto
+            {
+                Name = "Updated Advance Payment Report",
+                Amount = 700.00m,
+                Currency = "USD",
+                UserId = report.UserId,
+                ReportTypeId = report.ReportTypeId,
+                PlantId = report.PlantId,
+                CategoryId = report.CategoryId,
+                CostCenterId = report.CostCenterId,
+                BankName = report.BankName,
+                AccountNumber = report.AccountNumber,
+                Clabe = report.Clabe,
+                AccountProjectId = accountProject.Id,
+                AdvancePaymentDetail = new UpdateAdvancePaymentDetailDto
+                {
+                    OrderNumber = "AP-12345"
+                }
+            };
+
+            // Act
+            var response = await _client.PutAsJsonAsync($"/api/reports/{report.Id}", updateDto);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+            // Verify update
+            var getResponse = await _client.GetAsync($"/api/reports/{report.Id}");
+            getResponse.EnsureSuccessStatusCode();
+            var updatedReport = await getResponse.Content.ReadFromJsonAsync<ReportDto>();
+            Assert.NotNull(updatedReport);
+            Assert.Equal(updateDto.Name, updatedReport.Name);
+            Assert.Equal(updateDto.Amount, updatedReport.Amount);
+            Assert.Equal(updateDto.Currency, updatedReport.Currency);
+            Assert.NotNull(updatedReport.AdvancePaymentDetail);
+            Assert.Equal(updateDto.AdvancePaymentDetail.OrderNumber, updatedReport.AdvancePaymentDetail.OrderNumber);
+        }
+
+        [Fact]
+        public async Task DeleteReport_WhenReportExists_DeletesReport()
+        {
+            // Arrange
+            var report = await CreateTestReport();
+
+            // Act
+            var response = await _client.DeleteAsync($"/api/reports/{report.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+            // Verify deletion
+            var getResponse = await _client.GetAsync($"/api/reports/{report.Id}");
+            Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+        }
+
+        private async Task<Report> CreateTestReport()
+        {
+            var user = await FindAsync<User>(u => u.Username == "testuser");
+            var reportType = await FindAsync<ReportType>(rt => rt.Name == "Reimbursement");
+            var plant = await FindAsync<Plant>(p => p.Name == "Plant 1");
+            var category = await FindAsync<Category>(c => c.Name == "Travel");
+            var costCenter = await FindAsync<CostCenter>(cc => cc.Code == "CC1");
+
+            var report = new Report
+            {
+                Name = "Test Report for Get",
+                Amount = 200.00m,
+                Currency = "EUR",
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                ReportNumber = "24-00001",
+                BankName = "Test Bank",
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678",
+                ReimbursementDetail = new ReimbursementDetail
+                {
+                    EmployeeName = "Test Employee",
+                    EmployeeNumber = "E123"
+                }
+            };
+            await AddAsync(report);
+            return report;
+        }
+    }
+}
