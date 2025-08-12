@@ -68,7 +68,11 @@ namespace Simpl.Expenses.Application
 
             CreateMap<Permission, PermissionDto>();
             CreateMap<CreatePermissionDto, Permission>();
-            CreateMap<UpdatePermissionDto, Permission>();
+                        CreateMap<UpdatePermissionDto, Permission>();
+
+            CreateMap<UserPermission, UserPermissionDto>();
+            CreateMap<CreateUserPermissionDto, UserPermission>();
+            CreateMap<UpdateUserPermissionDto, UserPermission>();
             CreateMap<CreateWorkflowStepDto, WorkflowStep>();
             CreateMap<UpdateWorkflowStepDto, WorkflowStep>();
 
