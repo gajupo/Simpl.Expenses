@@ -61,6 +61,8 @@ namespace Core.WebApi
             builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
             builder.Services.AddApplication();
 
+            builder.Services.ConfigureFileStorage(builder.Configuration);
+
             // add controllers
             builder.Services.AddControllers();
 

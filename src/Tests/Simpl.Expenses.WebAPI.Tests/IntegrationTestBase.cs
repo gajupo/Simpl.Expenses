@@ -17,7 +17,7 @@ namespace Simpl.Expenses.WebAPI.Tests
         protected readonly HttpClient _client;
         private readonly IServiceScope _scope;
         private readonly ApplicationDbContext _context;
-        private readonly CustomWebApplicationFactory<Program> _factory;
+        protected readonly CustomWebApplicationFactory<Program> _factory;
 
         private record TokenResponse(string token);
         protected IntegrationTestBase(CustomWebApplicationFactory<Program> factory)

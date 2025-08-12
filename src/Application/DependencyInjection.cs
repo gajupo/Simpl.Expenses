@@ -29,6 +29,7 @@ namespace Simpl.Expenses.Application
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IReportStateService, ReportStateService>();
             services.AddScoped<IApprovalLogService, ApprovalLogService>();
+            services.AddScoped<IReportAttachmentService, ReportAttachmentService>();
             return services;
         }
     }

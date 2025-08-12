@@ -77,6 +77,10 @@ namespace Simpl.Expenses.Domain.Constants
         public const string WorkflowStepUpdate = "WorkflowStep.Update";
         public const string WorkflowStepDelete = "WorkflowStep.Delete";
 
+        public const string ReportAttachmentRead = "ReportAttachment.Read";
+        public const string ReportAttachmentCreate = "ReportAttachment.Create";
+        public const string ReportAttachmentDelete = "ReportAttachment.Delete";
+
         public static IEnumerable<string> All => new[]
         {
             ExpensesRead, ExpensesCreate, ExpensesUpdate, ExpensesDelete, ExpensesApprove,
@@ -94,7 +98,8 @@ namespace Simpl.Expenses.Domain.Constants
             ReportTypeRead, ReportTypeCreate, ReportTypeUpdate, ReportTypeDelete,
             SupplierRead, SupplierCreate, SupplierUpdate, SupplierDelete,
             UsoCFDIRead, UsoCFDICreate, UsoCFDIUpdate, UsoCFDIDelete,
-            WorkflowStepRead, WorkflowStepCreate, WorkflowStepUpdate, WorkflowStepDelete
+            WorkflowStepRead, WorkflowStepCreate, WorkflowStepUpdate, WorkflowStepDelete,
+            ReportAttachmentRead, ReportAttachmentCreate, ReportAttachmentDelete
         };
     }
 }
