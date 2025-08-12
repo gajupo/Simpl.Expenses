@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Simpl.Expenses.Application.Dtos.Report;
+using Simpl.Expenses.Application.Dtos.ReportState;
 using Simpl.Expenses.Application.Interfaces;
+using Simpl.Expenses.Domain.Constants;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -11,13 +14,16 @@ namespace Simpl.Expenses.Core.WebApi.Controllers
     public class ReportsController : ControllerBase
     {
         private readonly IReportService _reportService;
+        private readonly IReportStateService _reportStateService;
 
-        public ReportsController(IReportService reportService)
+        public ReportsController(IReportService reportService, IReportStateService reportStateService)
         {
             _reportService = reportService;
+            _reportStateService = reportStateService;
         }
 
         [HttpGet]
+        [Authorize(Policy = PermissionCatalog.ExpensesRead)]
         public async Task<ActionResult<IEnumerable<ReportDto>>> GetAllReports()
         {
             var reports = await _reportService.GetAllReportsAsync();
@@ -25,6 +31,7 @@ namespace Simpl.Expenses.Core.WebApi.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Policy = PermissionCatalog.ExpensesRead)]
         public async Task<ActionResult<ReportDto>> GetReportById(int id)
         {
             var report = await _reportService.GetReportByIdAsync(id);
@@ -36,6 +43,7 @@ namespace Simpl.Expenses.Core.WebApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = PermissionCatalog.ExpensesCreate)]
         public async Task<ActionResult<ReportDto>> CreateReport(CreateReportDto createReportDto)
         {
             var createdReport = await _reportService.CreateReportAsync(createReportDto);
@@ -43,6 +51,7 @@ namespace Simpl.Expenses.Core.WebApi.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = PermissionCatalog.ExpensesUpdate)]
         public async Task<IActionResult> UpdateReport(int id, UpdateReportDto updateReportDto)
         {
             await _reportService.UpdateReportAsync(id, updateReportDto);
@@ -50,10 +59,36 @@ namespace Simpl.Expenses.Core.WebApi.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = PermissionCatalog.ExpensesDelete)]
         public async Task<IActionResult> DeleteReport(int id)
         {
             await _reportService.DeleteReportAsync(id);
             return NoContent();
+        }
+
+        [HttpGet("{reportId}/states")]
+        [Authorize(Policy = PermissionCatalog.ExpensesRead)]
+        public async Task<ActionResult<ReportStateDto>> GetReportStates(int reportId)
+        {
+            var reportStates = await _reportStateService.GetReportStateByReportIdAsync(reportId);
+            if (reportStates == null)
+            {
+                return NotFound();
+            }
+            return Ok(reportStates);
+        }
+
+        [HttpPost("{reportId}/states")]
+        [Authorize(Policy = PermissionCatalog.ExpensesUpdate)]
+        public async Task<ActionResult<ReportStateDto>> CreateReportState(int reportId, CreateReportStateDto createReportStateDto)
+        {
+            if (reportId != createReportStateDto.ReportId)
+            {
+                return BadRequest("Report ID mismatch");
+            }
+
+            var createdReportState = await _reportStateService.CreateReportStateAsync(createReportStateDto);
+            return Ok(createdReportState);
         }
     }
 }

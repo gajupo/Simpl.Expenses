@@ -1,3 +1,5 @@
+using Simpl.Expenses.Application.Dtos.ReportState;
+using Simpl.Expenses.Domain.Enums;
 using System.Net;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -28,12 +30,17 @@ namespace Simpl.Expenses.WebAPI.Tests
         {
             // Arrange
             var user = await FindAsync<User>(u => u.Username == "padmin");
-            var reportType = await FindAsync<ReportType>(rt => rt.Name == "Purchase Order");
             var plant = await FindAsync<Plant>(p => p.Name == "Plant 1");
             var category = await FindAsync<Category>(c => c.Name == "Travel");
             var costCenter = await FindAsync<CostCenter>(cc => cc.Code == "CC1");
             var usoCfdi = await FindAsync<UsoCFDI>(u => u.Clave == "G01");
             var incoterm = await FindAsync<Incoterm>(i => i.Clave == "FOB");
+
+            var workflow = await AddAsync(new Workflow { Name = "PO Workflow", Description = "Workflow for Purchase Orders" });
+            var step1 = await AddAsync(new WorkflowStep { WorkflowId = workflow.Id, Name = "Step 1 PO", StepNumber = 1, ApproverRoleId = 1 });
+            await AddAsync(new WorkflowStep { WorkflowId = workflow.Id, Name = "Step 2 PO", StepNumber = 2, ApproverRoleId = 1 });
+
+            var reportType = await AddAsync(new ReportType { Name = "PO Report Type", DefaultWorkflowId = workflow.Id });
 
             var createReportDto = new CreateReportDto
             {
@@ -295,6 +302,133 @@ namespace Simpl.Expenses.WebAPI.Tests
             };
             await AddAsync(report);
             return report;
+        }
+
+        [Fact]
+        public async Task CreateReport_ShouldCreateInitialReportState()
+        {
+            // Arrange
+            var user = await FindAsync<User>(u => u.Username == "padmin");
+            var plant = await FindAsync<Plant>(p => p.Name == "Plant 1");
+            var category = await FindAsync<Category>(c => c.Name == "Travel");
+            var costCenter = await FindAsync<CostCenter>(cc => cc.Code == "CC1");
+
+            var workflow = await AddAsync(new Workflow { Name = "Test Workflow for Report State", Description = "Test Workflow Description" });
+            var step1 = await AddAsync(new WorkflowStep { WorkflowId = workflow.Id, Name = "Step 1", StepNumber = 1, ApproverRoleId = 1 });
+
+            var reportType = await AddAsync(new ReportType { Name = "Test Report Type with Workflow", DefaultWorkflowId = workflow.Id });
+
+            var createReportDto = new CreateReportDto
+            {
+                Name = "Test Report for State",
+                Amount = 150,
+                Currency = "EUR",
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                AccountProjectId = 1,
+                BankName = "Test Bank",
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678",
+            };
+
+            // Act
+            var response = await _client.PostAsJsonAsync("/api/reports", createReportDto);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var report = await response.Content.ReadFromJsonAsync<ReportDto>();
+            Assert.NotNull(report);
+
+            // Now, verify the state was created, /states returns all report states now
+            var stateResponse = await _client.GetAsync($"/api/reports/{report.Id}/states");
+            stateResponse.EnsureSuccessStatusCode();
+            var reportStates = await stateResponse.Content.ReadFromJsonAsync<IEnumerable<ReportStateDto>>();
+
+            Assert.NotNull(reportStates);
+            Assert.Equal(report.Id, reportStates.First().ReportId);
+            Assert.Equal(ReportStatus.Submitted, reportStates.First().Status);
+            Assert.Equal(workflow.Id, reportStates.First().WorkflowId);
+            Assert.Equal(step1.Id, reportStates.First().CurrentStepId);
+        }
+
+        [Fact]
+        public async Task CreateReportState_ShouldUpdateReportState()
+        {
+            // Arrange
+            var report = await CreateTestReportWithWorkflow();
+            var workflow = await FindAsync<Workflow>(w => w.Name == "PO Workflow");
+            var step2 = await FindAsync<WorkflowStep>(s => s.Name == "Step 2 PO");
+
+            var createReportStateDto = new CreateReportStateDto
+            {
+                ReportId = report.Item1.Id,
+                WorkflowId = workflow.Id,
+                CurrentStepId = step2.Id,
+                Status = ReportStatus.Approved
+            };
+
+            // Act
+            var response = await _client.PostAsJsonAsync($"/api/reports/{report.Item1.Id}/states", createReportStateDto);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var reportState = await response.Content.ReadFromJsonAsync<ReportStateDto>();
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.NotNull(reportState);
+            Assert.Equal(report.Item1.Id, reportState.ReportId);
+            Assert.Equal(ReportStatus.Approved, reportState.Status);
+            Assert.NotEqual(report.Item2.CurrentStepId, reportState.CurrentStepId); // Ensure step has changed
+            Assert.Equal(step2.Id, reportState.CurrentStepId);
+        }
+
+        private async Task<(Report, ReportStateDto)> CreateTestReportWithWorkflow()
+        {
+            var user = await FindAsync<User>(u => u.Username == "testuser");
+            var plant = await FindAsync<Plant>(p => p.Name == "Plant 1");
+            var category = await FindAsync<Category>(c => c.Name == "Travel");
+            var costCenter = await FindAsync<CostCenter>(cc => cc.Code == "CC1");
+
+            var workflow = await AddAsync(new Workflow { Name = "PO Workflow", Description = "Workflow for Purchase Orders" });
+            var step1 = await AddAsync(new WorkflowStep { WorkflowId = workflow.Id, Name = "Step 1 PO", StepNumber = 1, ApproverRoleId = 1 });
+            await AddAsync(new WorkflowStep { WorkflowId = workflow.Id, Name = "Step 2 PO", StepNumber = 2, ApproverRoleId = 1 });
+
+            var reportType = await AddAsync(new ReportType { Name = "PO Report Type", DefaultWorkflowId = workflow.Id });
+
+            var report = new Report
+            {
+                Name = "Test Report for State Update",
+                Amount = 200.00m,
+                Currency = "EUR",
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                ReportNumber = "24-00002",
+                BankName = "Test Bank",
+                AccountNumber = "1234567890",
+                AccountProjectId = 1,
+                Clabe = "123456789012345678"
+            };
+            await AddAsync(report);
+
+            // Create initial state
+            var createReportStateDto = new CreateReportStateDto
+            {
+                ReportId = report.Id,
+                WorkflowId = workflow.Id,
+                CurrentStepId = step1.Id,
+                Status = ReportStatus.Submitted
+            };
+            var createStateResponse = await _client.PostAsJsonAsync($"/api/reports/{report.Id}/states", createReportStateDto);
+            createStateResponse.EnsureSuccessStatusCode();
+            var createdReportState = await createStateResponse.Content.ReadFromJsonAsync<ReportStateDto>();
+
+            return (report, createdReportState);
         }
     }
 }

@@ -3,6 +3,7 @@ using AutoMapper;
 using Simpl.Expenses.Application.Dtos;
 using Simpl.Expenses.Application.Dtos.User;
 using Simpl.Expenses.Application.Dtos.Report;
+using Simpl.Expenses.Application.Dtos.ReportState;
 using Simpl.Expenses.Domain.Entities;
 
 namespace Simpl.Expenses.Application
@@ -92,6 +93,9 @@ namespace Simpl.Expenses.Application
                 .ForMember(dest => dest.ReportAmount, opt => opt.MapFrom(src => src.Report.Amount))
                 .ForMember(dest => dest.PlantName, opt => opt.MapFrom(src => src.Report.Plant.Name))
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Report.Category.Name));
+
+            CreateMap<ReportState, ReportStateDto>().ReverseMap();
+            CreateMap<CreateReportStateDto, ReportState>();
         }
     }
 }

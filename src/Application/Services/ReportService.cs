@@ -4,7 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Simpl.Expenses.Application.Dtos.Report;
 using Simpl.Expenses.Application.Interfaces;
 using Simpl.Expenses.Domain.Entities;
-using System;
+using Simpl.Expenses.Application.Dtos.ReportState;
+using Simpl.Expenses.Domain.Enums;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,11 +15,19 @@ namespace Simpl.Expenses.Application.Services
     public class ReportService : IReportService
     {
         private readonly IGenericRepository<Report> _reportRepository;
+        private readonly IGenericRepository<ReportType> _reportTypeRepository;
+        private readonly IReportStateService _reportStateService;
         private readonly IMapper _mapper;
 
-        public ReportService(IGenericRepository<Report> reportRepository, IMapper mapper)
+        public ReportService(
+            IGenericRepository<Report> reportRepository,
+            IGenericRepository<ReportType> reportTypeRepository,
+            IReportStateService reportStateService,
+            IMapper mapper)
         {
             _reportRepository = reportRepository;
+            _reportTypeRepository = reportTypeRepository;
+            _reportStateService = reportStateService;
             _mapper = mapper;
         }
 
@@ -30,6 +39,34 @@ namespace Simpl.Expenses.Application.Services
             UpdateReportDetails(report, createReportDto);
 
             await _reportRepository.AddAsync(report);
+
+            var reportTypeWorkflowInfo = await _reportTypeRepository.GetAll()
+                .Where(rt => rt.Id == report.ReportTypeId).FirstOrDefaultAsync();
+
+            if (reportTypeWorkflowInfo?.DefaultWorkflowId == null) throw new InvalidOperationException("Report type does not have a default workflow.");
+
+            var workflowInfo = await _reportTypeRepository.GetAll()
+                .Where(rt => rt.Id == report.ReportTypeId)
+                .Select(rt => new
+                {
+                    WorkflowId = rt.DefaultWorkflow.Id,
+                    Steps = rt.DefaultWorkflow.Steps.OrderBy(s => s.StepNumber).Select(s => new { s.Id }).ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            if (workflowInfo?.Steps.Any() == true)
+            {
+                var firstStepId = workflowInfo.Steps.First().Id;
+                var createReportStateDto = new CreateReportStateDto
+                {
+                    ReportId = report.Id,
+                    WorkflowId = workflowInfo.WorkflowId,
+                    CurrentStepId = firstStepId,
+                    Status = ReportStatus.Submitted
+                };
+                await _reportStateService.CreateReportStateAsync(createReportStateDto);
+            }
+
             return _mapper.Map<ReportDto>(report);
         }
 
