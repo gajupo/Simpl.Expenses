@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Simpl.Expenses.Application.Dtos;
 using Simpl.Expenses.Application.Interfaces;
 using System.Threading.Tasks;
+using Simpl.Expenses.Domain.Constants;
 
 namespace Core.WebApi.Controllers
 {
@@ -17,6 +19,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Policy = PermissionCatalog.UsoCFDIRead)]
         public async Task<IActionResult> GetUsoCFDIById(int id, CancellationToken cancellationToken = default)
         {
             var usoCFDI = await _usoCFDIService.GetUsoCFDIByIdAsync(id, cancellationToken);
@@ -28,6 +31,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = PermissionCatalog.UsoCFDIRead)]
         public async Task<IActionResult> GetAllUsoCFDIs(CancellationToken cancellationToken = default)
         {
             var usoCFDIs = await _usoCFDIService.GetAllUsoCFDIsAsync(cancellationToken);
@@ -35,6 +39,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = PermissionCatalog.UsoCFDICreate)]
         public async Task<IActionResult> CreateUsoCFDI([FromBody] CreateUsoCFDIDto createUsoCFDIDto, CancellationToken cancellationToken = default)
         {
             var newUsoCFDI = await _usoCFDIService.CreateUsoCFDIAsync(createUsoCFDIDto, cancellationToken);
@@ -42,6 +47,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = PermissionCatalog.UsoCFDIUpdate)]
         public async Task<IActionResult> UpdateUsoCFDI(int id, [FromBody] UpdateUsoCFDIDto updateUsoCFDIDto, CancellationToken cancellationToken = default)
         {
             await _usoCFDIService.UpdateUsoCFDIAsync(id, updateUsoCFDIDto, cancellationToken);
@@ -49,6 +55,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = PermissionCatalog.UsoCFDIDelete)]
         public async Task<IActionResult> DeleteUsoCFDI(int id, CancellationToken cancellationToken = default)
         {
             await _usoCFDIService.DeleteUsoCFDIAsync(id, cancellationToken);

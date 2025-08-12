@@ -15,6 +15,12 @@ namespace Simpl.Expenses.WebAPI.Tests
         {
         }
 
+        public override async Task InitializeAsync()
+        {
+            await base.InitializeAsync();
+            await LoginAsAdminAsync();
+        }
+
         [Fact]
         public async Task GetSupplierById_WhenSupplierExists_ReturnsOk()
         {

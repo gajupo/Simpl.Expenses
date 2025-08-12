@@ -15,6 +15,12 @@ namespace Simpl.Expenses.WebAPI.Tests
         {
         }
 
+        public override async Task InitializeAsync()
+        {
+            await base.InitializeAsync();
+            await LoginAsAdminAsync();
+        }
+
         [Fact]
         public async Task GetReportTypeById_WhenReportTypeExists_ReturnsOk()
         {
@@ -25,6 +31,7 @@ namespace Simpl.Expenses.WebAPI.Tests
             // Act
             var response = await _client.GetAsync($"/api/reporttypes/{reportType.Id}");
             var allReportsResponse = await _client.GetAsync("/api/reporttypes");
+            response.EnsureSuccessStatusCode();
             var allReportTypes = await allReportsResponse.Content.ReadFromJsonAsync<List<ReportTypeDto>>();
 
 

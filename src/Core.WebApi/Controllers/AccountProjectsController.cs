@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Simpl.Expenses.Application.Dtos;
 using Simpl.Expenses.Application.Interfaces;
 using System.Threading.Tasks;
+using Simpl.Expenses.Domain.Constants;
 
 namespace Core.WebApi.Controllers
 {
@@ -17,6 +19,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Policy = PermissionCatalog.AccountProjectRead)]
         public async Task<IActionResult> GetAccountProjectById(int id, CancellationToken cancellationToken = default)
         {
             var accountProject = await _accountProjectService.GetAccountProjectByIdAsync(id, cancellationToken);
@@ -28,6 +31,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = PermissionCatalog.AccountProjectRead)]
         public async Task<IActionResult> GetAllAccountProjects(CancellationToken cancellationToken = default)
         {
             var accountProjects = await _accountProjectService.GetAllAccountProjectsAsync(cancellationToken);
@@ -35,6 +39,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = PermissionCatalog.AccountProjectCreate)]
         public async Task<IActionResult> CreateAccountProject([FromBody] CreateAccountProjectDto createAccountProjectDto, CancellationToken cancellationToken = default)
         {
             var newAccountProject = await _accountProjectService.CreateAccountProjectAsync(createAccountProjectDto, cancellationToken);
@@ -42,6 +47,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = PermissionCatalog.AccountProjectUpdate)]
         public async Task<IActionResult> UpdateAccountProject(int id, [FromBody] UpdateAccountProjectDto updateAccountProjectDto, CancellationToken cancellationToken = default)
         {
             await _accountProjectService.UpdateAccountProjectAsync(id, updateAccountProjectDto, cancellationToken);
@@ -49,6 +55,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = PermissionCatalog.AccountProjectDelete)]
         public async Task<IActionResult> DeleteAccountProject(int id, CancellationToken cancellationToken = default)
         {
             await _accountProjectService.DeleteAccountProjectAsync(id, cancellationToken);

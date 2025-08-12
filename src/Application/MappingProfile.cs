@@ -96,6 +96,10 @@ namespace Simpl.Expenses.Application
 
             CreateMap<ReportState, ReportStateDto>().ReverseMap();
             CreateMap<CreateReportStateDto, ReportState>();
+
+            CreateMap<ApprovalLog, ApprovalLogDto>().ReverseMap();
+            CreateMap<CreateApprovalLogDto, ApprovalLog>();
+            CreateMap<UpdateApprovalLogDto, ApprovalLog>();
         }
     }
 }

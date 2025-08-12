@@ -2,9 +2,9 @@ namespace Simpl.Expenses.Domain.Enums
 {
     public enum ApprovalAction
     {
-        Submit,
-        Approve,
-        Reject,
+        Submitted,
+        Approved,
+        Rejected,
         RequestChanges,
         Comment,
         Resubmit,

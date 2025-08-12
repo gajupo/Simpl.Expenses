@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Simpl.Expenses.Application.Dtos;
 using Simpl.Expenses.Application.Interfaces;
 using System.Threading.Tasks;
+using Simpl.Expenses.Domain.Constants;
 
 namespace Core.WebApi.Controllers
 {
@@ -17,6 +19,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Policy = PermissionCatalog.SupplierRead)]
         public async Task<IActionResult> GetSupplierById(int id, CancellationToken cancellationToken = default)
         {
             var supplier = await _supplierService.GetSupplierByIdAsync(id, cancellationToken);
@@ -28,6 +31,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = PermissionCatalog.SupplierRead)]
         public async Task<IActionResult> GetAllSuppliers(CancellationToken cancellationToken = default)
         {
             var suppliers = await _supplierService.GetAllSuppliersAsync(cancellationToken);
@@ -35,6 +39,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = PermissionCatalog.SupplierCreate)]
         public async Task<IActionResult> CreateSupplier([FromBody] CreateSupplierDto createSupplierDto, CancellationToken cancellationToken = default)
         {
             var newSupplier = await _supplierService.CreateSupplierAsync(createSupplierDto, cancellationToken);
@@ -42,6 +47,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = PermissionCatalog.SupplierUpdate)]
         public async Task<IActionResult> UpdateSupplier(int id, [FromBody] UpdateSupplierDto updateSupplierDto, CancellationToken cancellationToken = default)
         {
             await _supplierService.UpdateSupplierAsync(id, updateSupplierDto, cancellationToken);
@@ -49,6 +55,7 @@ namespace Core.WebApi.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = PermissionCatalog.SupplierDelete)]
         public async Task<IActionResult> DeleteSupplier(int id, CancellationToken cancellationToken = default)
         {
             await _supplierService.DeleteSupplierAsync(id, cancellationToken);

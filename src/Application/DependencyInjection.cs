@@ -28,6 +28,7 @@ namespace Simpl.Expenses.Application
             services.AddScoped<IBudgetConsumptionService, BudgetConsumptionService>();
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IReportStateService, ReportStateService>();
+            services.AddScoped<IApprovalLogService, ApprovalLogService>();
             return services;
         }
     }
