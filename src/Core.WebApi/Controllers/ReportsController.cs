@@ -66,19 +66,19 @@ namespace Simpl.Expenses.Core.WebApi.Controllers
             return NoContent();
         }
 
-        [HttpGet("{reportId}/states")]
+        [HttpGet("{reportId}/state")]
         [Authorize(Policy = PermissionCatalog.ExpensesRead)]
-        public async Task<ActionResult<ReportStateDto>> GetReportStates(int reportId)
+        public async Task<ActionResult<ReportStateDto>> GetReportState(int reportId)
         {
-            var reportStates = await _reportStateService.GetReportStateByReportIdAsync(reportId);
-            if (reportStates == null)
+            var reportState = await _reportStateService.GetReportStateByReportIdAsync(reportId);
+            if (reportState == null)
             {
                 return NotFound();
             }
-            return Ok(reportStates);
+            return Ok(reportState);
         }
 
-        [HttpPost("{reportId}/states")]
+        [HttpPost("{reportId}/state")]
         [Authorize(Policy = PermissionCatalog.ExpensesUpdate)]
         public async Task<ActionResult<ReportStateDto>> CreateReportState(int reportId, CreateReportStateDto createReportStateDto)
         {

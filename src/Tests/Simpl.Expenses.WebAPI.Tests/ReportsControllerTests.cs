@@ -342,16 +342,16 @@ namespace Simpl.Expenses.WebAPI.Tests
             var report = await response.Content.ReadFromJsonAsync<ReportDto>();
             Assert.NotNull(report);
 
-            // Now, verify the state was created, /states returns all report states now
-            var stateResponse = await _client.GetAsync($"/api/reports/{report.Id}/states");
+            // Now, verify the state was created, /state returns the report state now
+            var stateResponse = await _client.GetAsync($"/api/reports/{report.Id}/state");
             stateResponse.EnsureSuccessStatusCode();
-            var reportStates = await stateResponse.Content.ReadFromJsonAsync<IEnumerable<ReportStateDto>>();
+            var reportState = await stateResponse.Content.ReadFromJsonAsync<ReportStateDto>();
 
-            Assert.NotNull(reportStates);
-            Assert.Equal(report.Id, reportStates.First().ReportId);
-            Assert.Equal(ReportStatus.Submitted, reportStates.First().Status);
-            Assert.Equal(workflow.Id, reportStates.First().WorkflowId);
-            Assert.Equal(step1.Id, reportStates.First().CurrentStepId);
+            Assert.NotNull(reportState);
+            Assert.Equal(report.Id, reportState.ReportId);
+            Assert.Equal(ReportStatus.Submitted, reportState.Status);
+            Assert.Equal(workflow.Id, reportState.WorkflowId);
+            Assert.Equal(step1.Id, reportState.CurrentStepId);
         }
 
         [Fact]
@@ -371,7 +371,7 @@ namespace Simpl.Expenses.WebAPI.Tests
             };
 
             // Act
-            var response = await _client.PostAsJsonAsync($"/api/reports/{report.Item1.Id}/states", createReportStateDto);
+            var response = await _client.PostAsJsonAsync($"/api/reports/{report.Item1.Id}/state", createReportStateDto);
 
             // Assert
             response.EnsureSuccessStatusCode();
@@ -424,7 +424,7 @@ namespace Simpl.Expenses.WebAPI.Tests
                 CurrentStepId = step1.Id,
                 Status = ReportStatus.Submitted
             };
-            var createStateResponse = await _client.PostAsJsonAsync($"/api/reports/{report.Id}/states", createReportStateDto);
+            var createStateResponse = await _client.PostAsJsonAsync($"/api/reports/{report.Id}/state", createReportStateDto);
             createStateResponse.EnsureSuccessStatusCode();
             var createdReportState = await createStateResponse.Content.ReadFromJsonAsync<ReportStateDto>();
 
