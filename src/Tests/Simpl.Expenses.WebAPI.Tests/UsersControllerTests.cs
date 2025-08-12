@@ -94,7 +94,7 @@ namespace Simpl.Expenses.WebAPI.Tests
         public async Task GetById_WithValidId_ReturnsUser()
         {
             // Arrange
-            var user = new Simpl.Expenses.Domain.Entities.User { Username = "getbyiduser", Email = "getbyid@user.com", PasswordHash = "test", RoleId = 1, DepartmentId = 1, IsActive = true };
+            var user = new User { Username = "getbyiduser", Email = "getbyid@user.com", PasswordHash = "test", RoleId = 1, DepartmentId = 1, IsActive = true };
             await AddAsync(user);
 
             // Act
@@ -106,6 +106,8 @@ namespace Simpl.Expenses.WebAPI.Tests
 
             Assert.NotNull(returnedUser);
             Assert.Equal(user.Id, returnedUser.Id);
+            Assert.Equal("Admin", returnedUser.RoleName);
+            Assert.Equal("IT", returnedUser.DepartmentName);
         }
 
         [Fact]

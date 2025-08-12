@@ -3,6 +3,7 @@ using Simpl.Expenses.Application.Dtos.User;
 using Simpl.Expenses.Application.Interfaces;
 using Simpl.Expenses.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace Simpl.Expenses.Application.Services
 {
@@ -17,16 +18,47 @@ namespace Simpl.Expenses.Application.Services
             _mapper = mapper;
         }
 
-        public async Task<UserDto> GetUserByIdAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<UserDto?> GetUserByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var user = await _userRepository.GetByIdAsync(id, cancellationToken);
-            return _mapper.Map<UserDto>(user);
+            return await _userRepository.GetAll(cancellationToken)
+                .AsTracking()
+                .Include(u => u.Role)
+                .Include(u => u.Department)
+                .Where(u => u.Id == id)
+                .Select(u => new UserDto
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Email = u.Email,
+                    RoleId = u.RoleId,
+                    RoleName = u.Role.Name,
+                    DepartmentId = u.DepartmentId,
+                    DepartmentName = u.Department.Name,
+                    ReportsToId = u.ReportsToId,
+                    IsActive = u.IsActive
+                })
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
         public async Task<IEnumerable<UserDto>> GetAllUsersAsync(CancellationToken cancellationToken = default)
         {
-            var users = await _userRepository.GetAll(cancellationToken).ToListAsync(cancellationToken);
-            return _mapper.Map<IEnumerable<UserDto>>(users);
+            return await _userRepository.GetAll(cancellationToken)
+                .AsTracking()
+                .Include(u => u.Role)
+                .Include(u => u.Department)
+                .Select(u => new UserDto
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Email = u.Email,
+                    RoleId = u.RoleId,
+                    RoleName = u.Role.Name,
+                    DepartmentId = u.DepartmentId,
+                    DepartmentName = u.Department.Name,
+                    ReportsToId = u.ReportsToId,
+                    IsActive = u.IsActive
+                })
+                .ToListAsync(cancellationToken);
         }
 
         public async Task<UserDto> CreateUserAsync(CreateUserDto createUserDto, CancellationToken cancellationToken = default)
@@ -34,6 +66,7 @@ namespace Simpl.Expenses.Application.Services
             var user = _mapper.Map<User>(createUserDto);
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(createUserDto.Password);
             await _userRepository.AddAsync(user, cancellationToken);
+
             return _mapper.Map<UserDto>(user);
         }
 

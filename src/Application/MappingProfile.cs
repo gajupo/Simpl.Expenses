@@ -12,7 +12,9 @@ namespace Simpl.Expenses.Application
     {
         public MappingProfile()
         {
-            CreateMap<User, UserDto>();
+            CreateMap<User, UserDto>()
+                .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role != null ? src.Role.Name : null))
+                .ForMember(dest => dest.DepartmentName, opt => opt.MapFrom(src => src.Department != null ? src.Department.Name : null));
             CreateMap<CreateUserDto, User>();
             CreateMap<UpdateUserDto, User>();
 
@@ -44,7 +46,8 @@ namespace Simpl.Expenses.Application
             CreateMap<CreatePlantDto, Plant>();
             CreateMap<UpdatePlantDto, Plant>();
 
-            CreateMap<ReportType, ReportTypeDto>();
+            CreateMap<ReportType, ReportTypeDto>()
+                .ForMember(dest => dest.DefaultWorkflowName, opt => opt.MapFrom(src => src.DefaultWorkflow != null ? src.DefaultWorkflow.Name : null));
             CreateMap<CreateReportTypeDto, ReportType>();
             CreateMap<UpdateReportTypeDto, ReportType>();
 
@@ -61,7 +64,11 @@ namespace Simpl.Expenses.Application
             CreateMap<CreateWorkflowDto, Workflow>();
             CreateMap<UpdateWorkflowDto, Workflow>();
 
-            CreateMap<WorkflowStep, WorkflowStepDto>();
+                        CreateMap<WorkflowStep, WorkflowStepDto>();
+
+            CreateMap<Permission, PermissionDto>();
+            CreateMap<CreatePermissionDto, Permission>();
+            CreateMap<UpdatePermissionDto, Permission>();
             CreateMap<CreateWorkflowStepDto, WorkflowStep>();
             CreateMap<UpdateWorkflowStepDto, WorkflowStep>();
 

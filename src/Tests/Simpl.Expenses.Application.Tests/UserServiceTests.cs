@@ -37,6 +37,26 @@ namespace Simpl.Expenses.Application.Tests
 
         private void SeedDatabase()
         {
+            var roles = new List<Role>
+            {
+                new Role { Id = 1, Name = "Admin" },
+                new Role { Id = 2, Name = "User" }
+            };
+            _context.Roles.AddRange(roles);
+
+            var costCenters = new List<CostCenter>
+            {
+                new CostCenter { Id = 1, Name = "Test Cost Center", Code = "TCC", IsActive = true }
+            };
+            _context.CostCenters.AddRange(costCenters);
+
+            var departments = new List<Department>
+            {
+                new Department { Id = 1, Name = "IT", CostCenterId = 1 },
+                new Department { Id = 2, Name = "HR", CostCenterId = 1 }
+            };
+            _context.Departments.AddRange(departments);
+
             var users = new List<User>
             {
                 new User { Id = 1, Username = "user1", Email = "user1@test.com", PasswordHash = "hash1", IsActive = true, DepartmentId = 1, RoleId = 1 },
@@ -59,6 +79,8 @@ namespace Simpl.Expenses.Application.Tests
             Assert.NotNull(result);
             Assert.Equal(1, result.Id);
             Assert.Equal("user1", result.Username);
+            Assert.Equal("Admin", result.RoleName);
+            Assert.Equal("IT", result.DepartmentName);
         }
 
         [Fact]
@@ -73,6 +95,9 @@ namespace Simpl.Expenses.Application.Tests
             // Assert
             Assert.NotNull(result);
             Assert.Equal(2, result.Count());
+            var user1 = result.First(u => u.Id == 1);
+            Assert.Equal("Admin", user1.RoleName);
+            Assert.Equal("IT", user1.DepartmentName);
         }
 
         [Fact]
@@ -83,12 +108,9 @@ namespace Simpl.Expenses.Application.Tests
 
             // Act
             var result = await _userService.CreateUserAsync(createUserDto);
-            var userInDb = await _context.Users.FindAsync(result.Id);
 
             // Assert
             Assert.NotNull(result);
-            Assert.NotNull(userInDb);
-            Assert.Equal("newuser", userInDb.Username);
         }
 
         [Fact]
@@ -115,6 +137,7 @@ namespace Simpl.Expenses.Application.Tests
         public async Task CreateUserAsync_ShouldPersistUserToDatabase_AndIncrementUserCount()
         {
             // Arrange
+            SeedDatabase();
             var initialUserCount = await _context.Users.CountAsync();
             var createUserDto = new CreateUserDto
             {

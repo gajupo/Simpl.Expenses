@@ -1,4 +1,5 @@
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Simpl.Expenses.Application.Dtos;
 using Simpl.Expenses.Application.Interfaces;
 using Simpl.Expenses.Domain.Entities;
@@ -19,21 +20,31 @@ namespace Simpl.Expenses.Application.Services
 
         public async Task<ReportTypeDto> GetReportTypeByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var reportType = await _reportTypeRepository.GetByIdAsync(id, cancellationToken);
-            return _mapper.Map<ReportTypeDto>(reportType);
+            return await _reportTypeRepository.GetAll(cancellationToken)
+                .Where(rt => rt.Id == id)
+                .ProjectTo<ReportTypeDto>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
         public async Task<IEnumerable<ReportTypeDto>> GetAllReportTypesAsync(CancellationToken cancellationToken = default)
         {
-            var reportTypes = await _reportTypeRepository.GetAll(cancellationToken).ToListAsync(cancellationToken);
-            return _mapper.Map<IEnumerable<ReportTypeDto>>(reportTypes);
+            return await _reportTypeRepository.GetAll(cancellationToken)
+                .ProjectTo<ReportTypeDto>(_mapper.ConfigurationProvider)
+                .ToListAsync(cancellationToken);
         }
 
         public async Task<ReportTypeDto> CreateReportTypeAsync(CreateReportTypeDto createReportTypeDto, CancellationToken cancellationToken = default)
         {
             var reportType = _mapper.Map<ReportType>(createReportTypeDto);
             await _reportTypeRepository.AddAsync(reportType, cancellationToken);
-            return _mapper.Map<ReportTypeDto>(reportType);
+
+            var createdDto = await _reportTypeRepository.GetAll(cancellationToken)
+                .Include(rt => rt.DefaultWorkflow)
+                .Where(rt => rt.Id == reportType.Id)
+                .ProjectTo<ReportTypeDto>(_mapper.ConfigurationProvider)
+                .FirstAsync(cancellationToken);
+
+            return createdDto;
         }
 
         public async Task UpdateReportTypeAsync(int id, UpdateReportTypeDto updateReportTypeDto, CancellationToken cancellationToken = default)
