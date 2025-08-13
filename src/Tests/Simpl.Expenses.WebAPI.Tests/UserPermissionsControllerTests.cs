@@ -22,7 +22,7 @@ public class UserPermissionsControllerTests : IntegrationTestBase
 
     private async Task<(User user, Permission permission)> CreateUserAndPermissionAsync()
     {
-        var user = new User { Username = "testuser", Email = "test@test.com", PasswordHash = "..." };
+        var user = new User { Username = "testuser", Name = "Test User", Email = "test@test.com", PasswordHash = "..." };
         await AddAsync(user);
 
         var permission = new Permission { Name = "Test.Permission" };

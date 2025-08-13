@@ -45,7 +45,7 @@ namespace Simpl.Expenses.WebAPI.Tests
             await base.InitializeAsync();
             await LoginAsAdminAsync();
 
-            testUser = new User { Username = "testuser", Email = "test@user.com", PasswordHash = "test" };
+            testUser = new User { Username = "testuser", Name = "Test User", Email = "test@user.com", PasswordHash = "test" };
             await AddAsync(testUser);
 
             var reportType = new ReportType { Name = "Test Report Type" };

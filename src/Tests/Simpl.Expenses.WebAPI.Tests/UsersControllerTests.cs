@@ -35,6 +35,7 @@ namespace Simpl.Expenses.WebAPI.Tests
             var newUser = new CreateUserDto
             {
                 Username = "testuser",
+                Name = "Test User",
                 Email = "test@user.com",
                 Password = "password",
                 RoleId = 1,
@@ -50,6 +51,7 @@ namespace Simpl.Expenses.WebAPI.Tests
             // Assert
             Assert.NotNull(createdUser);
             Assert.Equal(newUser.Username, createdUser.Username);
+            Assert.Equal(newUser.Name, createdUser.Name);
             Assert.Equal(newUser.Email, createdUser.Email);
             Assert.Equal(newUser.RoleId, createdUser.RoleId);
             Assert.Equal(newUser.DepartmentId, createdUser.DepartmentId);
@@ -63,6 +65,7 @@ namespace Simpl.Expenses.WebAPI.Tests
             var firstUser = new CreateUserDto
             {
                 Username = "firstuser",
+                Name = "First User",
                 Email = "duplicate@user.com",
                 Password = "password",
                 RoleId = 1,
@@ -72,6 +75,7 @@ namespace Simpl.Expenses.WebAPI.Tests
             var secondUser = new CreateUserDto
             {
                 Username = "seconduser",
+                Name = "Second User",
                 Email = "duplicate@user.com", // Same email
                 Password = "password",
                 RoleId = 1,
@@ -94,7 +98,7 @@ namespace Simpl.Expenses.WebAPI.Tests
         public async Task GetById_WithValidId_ReturnsUser()
         {
             // Arrange
-            var user = new User { Username = "getbyiduser", Email = "getbyid@user.com", PasswordHash = "test", RoleId = 1, DepartmentId = 1, IsActive = true };
+            var user = new User { Username = "getbyiduser", Name = "Get By Id User", Email = "getbyid@user.com", PasswordHash = "test", RoleId = 1, DepartmentId = 1, IsActive = true };
             await AddAsync(user);
 
             // Act
@@ -126,12 +130,13 @@ namespace Simpl.Expenses.WebAPI.Tests
         public async Task Put_UpdateExistingUser_ReturnsNoContent()
         {
             // Arrange
-            var user = new Simpl.Expenses.Domain.Entities.User { Username = "updateuser", Email = "update@user.com", PasswordHash = "test", RoleId = 1, DepartmentId = 1, IsActive = true };
+            var user = new Simpl.Expenses.Domain.Entities.User { Username = "updateuser", Name = "Update User", Email = "update@user.com", PasswordHash = "test", RoleId = 1, DepartmentId = 1, IsActive = true };
             await AddAsync(user);
 
             var updateUser = new UpdateUserDto
             {
                 Username = "updateduser",
+                Name = "Updated User",
                 Email = "updated@user.com",
                 RoleId = 1,
                 DepartmentId = 1,
@@ -153,6 +158,7 @@ namespace Simpl.Expenses.WebAPI.Tests
             var updateUser = new UpdateUserDto
             {
                 Username = "nonexistent",
+                Name = "Non Existent",
                 Email = "nonexistent@user.com"
             };
 
@@ -171,6 +177,7 @@ namespace Simpl.Expenses.WebAPI.Tests
             var createUser = new CreateUserDto
             {
                 Username = "partialuser",
+                Name = "Partial User",
                 Email = "partial@user.com",
                 Password = "password123",
                 RoleId = 1,
@@ -186,6 +193,7 @@ namespace Simpl.Expenses.WebAPI.Tests
             var partialUpdate = new UpdateUserDto
             {
                 Username = "newusername",
+                Name = "New Partial Name",
                 Email = "partial@user.com", // Keep same email
                 RoleId = 1, // Keep same role
                 DepartmentId = 1, // Keep same department
@@ -205,6 +213,7 @@ namespace Simpl.Expenses.WebAPI.Tests
             Assert.NotNull(updatedUserResult);
 
             Assert.Equal("newusername", updatedUserResult.Username); // Should be updated
+            Assert.Equal("New Partial Name", updatedUserResult.Name); // Should be updated
             Assert.Equal("partial@user.com", updatedUserResult.Email); // Should remain same
             Assert.Equal(1, updatedUserResult.RoleId); // Should remain same
             Assert.Equal(1, updatedUserResult.DepartmentId); // Should remain same
@@ -215,7 +224,7 @@ namespace Simpl.Expenses.WebAPI.Tests
         public async Task Delete_ExistingUser_ReturnsNoContent()
         {
             // Arrange
-            var user = new Simpl.Expenses.Domain.Entities.User { Username = "deleteuser", Email = "delete@user.com", PasswordHash = "test", RoleId = 1, DepartmentId = 1, IsActive = true };
+            var user = new Simpl.Expenses.Domain.Entities.User { Username = "deleteuser", Name = "Delete User", Email = "delete@user.com", PasswordHash = "test", RoleId = 1, DepartmentId = 1, IsActive = true };
             await AddAsync(user);
 
             // Act
@@ -247,6 +256,7 @@ namespace Simpl.Expenses.WebAPI.Tests
                 new CreateUserDto
                 {
                     Username = "user1",
+                    Name = "User One",
                     Email = "user1@test.com",
                     Password = "password123",
                     RoleId = 1,
@@ -255,6 +265,7 @@ namespace Simpl.Expenses.WebAPI.Tests
                 new CreateUserDto
                 {
                     Username = "user2",
+                    Name = "User Two",
                     Email = "user2@test.com",
                     Password = "password123",
                     RoleId = 1,
@@ -263,6 +274,7 @@ namespace Simpl.Expenses.WebAPI.Tests
                 new CreateUserDto
                 {
                     Username = "user3",
+                    Name = "User Three",
                     Email = "user3@test.com",
                     Password = "password123",
                     RoleId = 1,

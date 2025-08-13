@@ -29,6 +29,7 @@ namespace Simpl.Expenses.Application.Services
                 {
                     Id = u.Id,
                     Username = u.Username,
+                    Name = u.Name,
                     Email = u.Email,
                     RoleId = u.RoleId,
                     RoleName = u.Role.Name,
@@ -50,6 +51,7 @@ namespace Simpl.Expenses.Application.Services
                 {
                     Id = u.Id,
                     Username = u.Username,
+                    Name = u.Name,
                     Email = u.Email,
                     RoleId = u.RoleId,
                     RoleName = u.Role.Name,

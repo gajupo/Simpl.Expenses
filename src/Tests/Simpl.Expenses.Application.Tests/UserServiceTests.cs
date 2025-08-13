@@ -59,8 +59,8 @@ namespace Simpl.Expenses.Application.Tests
 
             var users = new List<User>
             {
-                new User { Id = 1, Username = "user1", Email = "user1@test.com", PasswordHash = "hash1", IsActive = true, DepartmentId = 1, RoleId = 1 },
-                new User { Id = 2, Username = "user2", Email = "user2@test.com", PasswordHash = "hash2", IsActive = true, DepartmentId = 1, RoleId = 1 }
+                new User { Id = 1, Username = "user1", Name = "User One", Email = "user1@test.com", PasswordHash = "hash1", IsActive = true, DepartmentId = 1, RoleId = 1 },
+                new User { Id = 2, Username = "user2", Name = "User Two", Email = "user2@test.com", PasswordHash = "hash2", IsActive = true, DepartmentId = 1, RoleId = 1 }
             };
             _context.Users.AddRange(users);
             _context.SaveChanges();
@@ -104,7 +104,7 @@ namespace Simpl.Expenses.Application.Tests
         public async Task CreateUserAsync_ShouldAddUserToDatabase()
         {
             // Arrange
-            var createUserDto = new CreateUserDto { Username = "newuser", Email = "new@user.com", Password = "password123", DepartmentId = 1, RoleId = 1 };
+            var createUserDto = new CreateUserDto { Username = "newuser", Name = "New User", Email = "new@user.com", Password = "password123", DepartmentId = 1, RoleId = 1 };
 
             // Act
             var result = await _userService.CreateUserAsync(createUserDto);
@@ -142,6 +142,7 @@ namespace Simpl.Expenses.Application.Tests
             var createUserDto = new CreateUserDto
             {
                 Username = "persisteduser",
+                Name = "Persisted User",
                 Email = "persisted@user.com",
                 Password = "securepassword123",
                 DepartmentId = 1,

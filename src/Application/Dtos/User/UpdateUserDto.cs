@@ -8,6 +8,9 @@ namespace Simpl.Expenses.Application.Dtos.User
         [StringLength(50)]
         public string Username { get; set; }
 
+        [StringLength(100)]
+        public string Name { get; set; }
+
         [EmailAddress]
         [StringLength(100)]
         public string Email { get; set; }

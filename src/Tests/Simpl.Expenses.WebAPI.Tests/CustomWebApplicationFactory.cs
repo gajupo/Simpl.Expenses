@@ -102,8 +102,8 @@ namespace Simpl.Expenses.WebAPI.Tests
             );
 
             context.Users.AddRange(
-                new User { Username = "padmin", Email = "padmin@test.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"), RoleId = adminRole.Item1.Id, DepartmentId = departments[0].Id, IsActive = true },
-                new User { Username = "testuser", Email = "user@test.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"), RoleId = userRole.Item1.Id, DepartmentId = departments[1].Id, IsActive = true }
+                new User { Username = "padmin", Email = "padmin@test.com", Name = "Administrator Name", PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"), RoleId = adminRole.Item1.Id, DepartmentId = departments[0].Id, IsActive = true },
+                new User { Username = "testuser", Email = "user@test.com", Name = "Test User", PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"), RoleId = userRole.Item1.Id, DepartmentId = departments[1].Id, IsActive = true }
             );
 
             context.SaveChanges();

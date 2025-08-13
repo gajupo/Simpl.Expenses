@@ -64,7 +64,7 @@ public class AuthControllerTests : IntegrationTestBase
         var role = new Role { Name = "NoPermissions" };
         await AddAsync(role);
 
-        var user = new User { Username = "nopermissionsuser", Email = "nopermissions@test.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"), RoleId = role.Id, DepartmentId = 1, IsActive = true };
+        var user = new User { Username = "nopermissionsuser", Name = "No Permissions User", Email = "nopermissions@test.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"), RoleId = role.Id, DepartmentId = 1, IsActive = true };
         await AddAsync(user);
 
         var token = await GetJwtToken("nopermissionsuser", "password");
