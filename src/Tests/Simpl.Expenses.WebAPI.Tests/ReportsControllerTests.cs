@@ -29,12 +29,12 @@ namespace Simpl.Expenses.WebAPI.Tests
         public async Task CreateReport_WithPurchaseOrder_CreatesReportSuccessfully()
         {
             // Arrange
-            var user = await FindAsync<User>(u => u.Username == "padmin");
-            var plant = await FindAsync<Plant>(p => p.Name == "Plant 1");
-            var category = await FindAsync<Category>(c => c.Name == "Travel");
-            var costCenter = await FindAsync<CostCenter>(cc => cc.Code == "CC1");
-            var usoCfdi = await FindAsync<UsoCFDI>(u => u.Clave == "G01");
-            var incoterm = await FindAsync<Incoterm>(i => i.Clave == "FOB");
+            var user = await GetFirstAsync<User>(u => u.Username == "padmin");
+            var plant = await GetFirstAsync<Plant>(p => p.Name == "Plant 1");
+            var category = await GetFirstAsync<Category>(c => c.Name == "Travel");
+            var costCenter = await GetFirstAsync<CostCenter>(cc => cc.Code == "CC1");
+            var usoCfdi = await GetFirstAsync<UsoCFDI>(u => u.Clave == "G01");
+            var incoterm = await GetFirstAsync<Incoterm>(i => i.Clave == "FOB");
 
             var workflow = await AddAsync(new Workflow { Name = "PO Workflow", Description = "Workflow for Purchase Orders" });
             var step1 = await AddAsync(new WorkflowStep { WorkflowId = workflow.Id, Name = "Step 1 PO", StepNumber = 1, ApproverRoleId = 1 });
@@ -111,9 +111,9 @@ namespace Simpl.Expenses.WebAPI.Tests
         {
             // Arrange
             var report = await CreateTestReport();
-            var plant = await FindAsync<Plant>(p => p.Name == "Plant 2");
-            var category = await FindAsync<Category>(c => c.Name == "Office Supplies");
-            var costCenter = await FindAsync<CostCenter>(cc => cc.Code == "CC2");
+            var plant = await GetFirstAsync<Plant>(p => p.Name == "Plant 2");
+            var category = await GetFirstAsync<Category>(c => c.Name == "Office Supplies");
+            var costCenter = await GetFirstAsync<CostCenter>(cc => cc.Code == "CC2");
 
             var updateDto = new UpdateReportDto
             {
@@ -162,9 +162,9 @@ namespace Simpl.Expenses.WebAPI.Tests
         {
             // Arrange
             var report = await CreateTestReport();
-            var usoCfdi = await FindAsync<UsoCFDI>(u => u.Clave == "G01");
-            var incoterm = await FindAsync<Incoterm>(i => i.Clave == "CIF");
-            var accountProject = await FindAsync<AccountProject>(ap => ap.Code == "AP1");
+            var usoCfdi = await GetFirstAsync<UsoCFDI>(u => u.Clave == "G01");
+            var incoterm = await GetFirstAsync<Incoterm>(i => i.Clave == "CIF");
+            var accountProject = await GetFirstAsync<AccountProject>(ap => ap.Code == "AP1");
 
             var updateDto = new UpdateReportDto
             {
@@ -213,7 +213,7 @@ namespace Simpl.Expenses.WebAPI.Tests
         {
             // Arrange
             var report = await CreateTestReport();
-            var accountProject = await FindAsync<AccountProject>(ap => ap.Code == "AP2");
+            var accountProject = await GetFirstAsync<AccountProject>(ap => ap.Code == "AP2");
 
             var updateDto = new UpdateReportDto
             {
@@ -274,11 +274,11 @@ namespace Simpl.Expenses.WebAPI.Tests
 
         private async Task<Report> CreateTestReport()
         {
-            var user = await FindAsync<User>(u => u.Username == "testuser");
-            var reportType = await FindAsync<ReportType>(rt => rt.Name == "Reimbursement");
-            var plant = await FindAsync<Plant>(p => p.Name == "Plant 1");
-            var category = await FindAsync<Category>(c => c.Name == "Travel");
-            var costCenter = await FindAsync<CostCenter>(cc => cc.Code == "CC1");
+            var user = await GetFirstAsync<User>(u => u.Username == "testuser");
+            var reportType = await GetFirstAsync<ReportType>(rt => rt.Name == "Reimbursement");
+            var plant = await GetFirstAsync<Plant>(p => p.Name == "Plant 1");
+            var category = await GetFirstAsync<Category>(c => c.Name == "Travel");
+            var costCenter = await GetFirstAsync<CostCenter>(cc => cc.Code == "CC1");
 
             var report = new Report
             {
@@ -308,10 +308,10 @@ namespace Simpl.Expenses.WebAPI.Tests
         public async Task CreateReport_ShouldCreateInitialReportState()
         {
             // Arrange
-            var user = await FindAsync<User>(u => u.Username == "padmin");
-            var plant = await FindAsync<Plant>(p => p.Name == "Plant 1");
-            var category = await FindAsync<Category>(c => c.Name == "Travel");
-            var costCenter = await FindAsync<CostCenter>(cc => cc.Code == "CC1");
+            var user = await GetFirstAsync<User>(u => u.Username == "padmin");
+            var plant = await GetFirstAsync<Plant>(p => p.Name == "Plant 1");
+            var category = await GetFirstAsync<Category>(c => c.Name == "Travel");
+            var costCenter = await GetFirstAsync<CostCenter>(cc => cc.Code == "CC1");
 
             var workflow = await AddAsync(new Workflow { Name = "Test Workflow for Report State", Description = "Test Workflow Description" });
             var step1 = await AddAsync(new WorkflowStep { WorkflowId = workflow.Id, Name = "Step 1", StepNumber = 1, ApproverRoleId = 1 });
@@ -359,8 +359,8 @@ namespace Simpl.Expenses.WebAPI.Tests
         {
             // Arrange
             var report = await CreateTestReportWithWorkflow();
-            var workflow = await FindAsync<Workflow>(w => w.Name == "PO Workflow");
-            var step2 = await FindAsync<WorkflowStep>(s => s.Name == "Step 2 PO");
+            var workflow = await GetFirstAsync<Workflow>(w => w.Name == "PO Workflow");
+            var step2 = await GetFirstAsync<WorkflowStep>(s => s.Name == "Step 2 PO");
 
             var createReportStateDto = new CreateReportStateDto
             {
@@ -387,10 +387,10 @@ namespace Simpl.Expenses.WebAPI.Tests
 
         private async Task<(Report, ReportStateDto)> CreateTestReportWithWorkflow()
         {
-            var user = await FindAsync<User>(u => u.Username == "testuser");
-            var plant = await FindAsync<Plant>(p => p.Name == "Plant 1");
-            var category = await FindAsync<Category>(c => c.Name == "Travel");
-            var costCenter = await FindAsync<CostCenter>(cc => cc.Code == "CC1");
+            var user = await GetFirstAsync<User>(u => u.Username == "testuser");
+            var plant = await GetFirstAsync<Plant>(p => p.Name == "Plant 1");
+            var category = await GetFirstAsync<Category>(c => c.Name == "Travel");
+            var costCenter = await GetFirstAsync<CostCenter>(cc => cc.Code == "CC1");
 
             var workflow = await AddAsync(new Workflow { Name = "PO Workflow", Description = "Workflow for Purchase Orders" });
             var step1 = await AddAsync(new WorkflowStep { WorkflowId = workflow.Id, Name = "Step 1 PO", StepNumber = 1, ApproverRoleId = 1 });

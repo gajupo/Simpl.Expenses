@@ -18,5 +18,6 @@ namespace Simpl.Expenses.Domain.Entities
         public User ReportsTo { get; set; }
         public bool IsActive { get; set; }
         public ICollection<UserPermission> UserPermissions { get; set; }
+        public ICollection<UserPlant> UserPlants { get; set; }
     }
 }

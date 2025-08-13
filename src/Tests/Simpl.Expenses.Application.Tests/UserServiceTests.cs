@@ -14,6 +14,7 @@ namespace Simpl.Expenses.Application.Tests
     {
         private readonly ApplicationDbContext _context;
         private readonly IGenericRepository<User> _userRepository;
+        private readonly IGenericRepository<UserPlant> _userPlantRepository;
         private readonly IMapper _mapper;
         private readonly IUserService _userService;
 
@@ -32,7 +33,8 @@ namespace Simpl.Expenses.Application.Tests
             _mapper = mappingConfig.CreateMapper();
 
             _userRepository = new GenericRepository<User>(_context);
-            _userService = new UserService(_userRepository, _mapper);
+            _userPlantRepository = new GenericRepository<UserPlant>(_context);
+            _userService = new UserService(_userRepository, _userPlantRepository, _mapper);
         }
 
         private void SeedDatabase()

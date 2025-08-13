@@ -51,9 +51,19 @@ namespace Simpl.Expenses.WebAPI.Tests
             return entity;
         }
 
-        protected async Task<T?> FindAsync<T>(Expression<Func<T, bool>> predicate) where T : class
+        protected async Task<T?> GetFirstAsync<T>(Expression<Func<T, bool>> predicate) where T : class
         {
             return await _context.Set<T>().FirstOrDefaultAsync(predicate);
+        }
+
+        protected async Task<List<T>> FindAllAsync<T>(Expression<Func<T, bool>> predicate) where T : class
+        {
+            return await _context.Set<T>().Where(predicate).ToListAsync();
+        }
+
+        protected IQueryable<T> CreateQuery<T>(CancellationToken cancellationToken = default) where T : class
+        {
+            return _context.Set<T>();
         }
 
         protected Task<T> RemoveEntityAsync<T>(T entity) where T : class

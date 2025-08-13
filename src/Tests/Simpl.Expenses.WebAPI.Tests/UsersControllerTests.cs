@@ -6,6 +6,9 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Xunit;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace Simpl.Expenses.WebAPI.Tests
 {
@@ -19,6 +22,67 @@ namespace Simpl.Expenses.WebAPI.Tests
         {
             await base.InitializeAsync();
             await LoginAsAdminAsync();
+        }
+
+        [Fact]
+        public async Task GetMyProfile_WhenAuthenticated_ReturnsUserProfile()
+        {
+            // Arrange
+            var adminUser = await GetFirstAsync<User>(u => u.Username == "padmin");
+
+            var newPermission = new Permission { Name = "Test.Permission" };
+            await AddAsync(newPermission);
+            var newUserPermission = new UserPermission
+            {
+                UserId = adminUser.Id,
+                PermissionId = newPermission.Id
+            };
+            await AddAsync(newUserPermission);
+
+            var newPlant = new Plant { Name = "Test Plant" };
+            await AddAsync(newPlant);
+            var newUserPlant = new UserPlant
+            {
+                UserId = adminUser.Id,
+                PlantId = newPlant.Id
+            };
+            await AddAsync(newUserPlant);
+
+            var role = await GetFirstAsync<Role>(r => r.Id == adminUser.RoleId);
+            var department = await GetFirstAsync<Department>(d => d.Id == adminUser.DepartmentId);
+            var costCenter = await GetFirstAsync<CostCenter>(c => c.Id == department.CostCenterId);
+            var userPermission = await CreateQuery<UserPermission>()
+                .Include(up => up.Permission)
+                .Where(up => up.UserId == adminUser.Id)
+                .Select(up => up.Permission.Name)
+                .FirstOrDefaultAsync();
+            var userPlant = await CreateQuery<UserPlant>()
+                .Include(up => up.Plant)
+                .Where(up => up.UserId == adminUser.Id)
+                .Select(up => up.Plant.Name)
+                .FirstOrDefaultAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/users/me");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var userProfile = await response.Content.ReadFromJsonAsync<UserProfileDto>();
+
+            Assert.NotNull(userProfile);
+            Assert.Equal(adminUser.Id, userProfile.Id);
+            Assert.Equal(adminUser.Username, userProfile.Username);
+            Assert.Equal(adminUser.Name, userProfile.Name);
+            Assert.Equal(adminUser.Email, userProfile.Email);
+            Assert.Equal(adminUser.IsActive, userProfile.IsActive);
+            Assert.Equal(role.Id, userProfile.RoleId);
+            Assert.Equal(role.Name, userProfile.RoleName);
+            Assert.Equal(department.Id, userProfile.DepartmentId);
+            Assert.Equal(department.Name, userProfile.DepartmentName);
+            Assert.Equal(costCenter.Id, userProfile.CostCenterId);
+            Assert.Equal(costCenter.Name, userProfile.CostCenterName);
+            Assert.Contains(userPermission, userProfile.Permissions);
+            Assert.Contains(userPlant, userProfile.UserPlants.Select(up => up.PlantName));
         }
 
         [Fact]

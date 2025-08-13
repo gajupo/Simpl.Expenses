@@ -5,6 +5,7 @@ using Simpl.Expenses.Application.Dtos.User;
 using Simpl.Expenses.Application.Interfaces;
 using System.Threading.Tasks;
 using Simpl.Expenses.Domain.Constants;
+using System.Security.Claims;
 
 namespace Core.WebApi.Controllers
 {
@@ -19,6 +20,25 @@ namespace Core.WebApi.Controllers
         {
             _userService = userService;
             _authService = authService;
+        }
+
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> GetMyProfile(CancellationToken cancellationToken = default)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var userProfile = await _userService.GetUserProfileAsync(userId, cancellationToken);
+            if (userProfile == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(userProfile);
         }
 
         [HttpGet("{id}")]
