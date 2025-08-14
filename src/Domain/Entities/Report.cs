@@ -34,5 +34,6 @@ namespace Simpl.Expenses.Domain.Entities
         public PurchaseOrderDetail? PurchaseOrderDetail { get; set; }
         public AdvancePaymentDetail? AdvancePaymentDetail { get; set; }
         public ReimbursementDetail? ReimbursementDetail { get; set; }
+        public ReportState? ReportState { get; set; }
     }
 }

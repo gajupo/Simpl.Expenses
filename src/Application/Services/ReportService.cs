@@ -9,6 +9,7 @@ using Simpl.Expenses.Domain.Enums;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System;
 
 namespace Simpl.Expenses.Application.Services
 {
@@ -114,7 +115,10 @@ namespace Simpl.Expenses.Application.Services
                     CategoryName = r.Category.Name,
                     CreatedAt = r.CreatedAt,
                     AccountProjectId = r.AccountProjectId,
-                    AccountProjectName = r.AccountProject != null ? r.AccountProject.Name : null
+                    AccountProjectName = r.AccountProject != null ? r.AccountProject.Name : null,
+                    Status = r.ReportState != null ? r.ReportState.Status.ToString() : null,
+                    CurrentStepId = r.ReportState != null ? (int?)r.ReportState.CurrentStepId : null,
+                    CurrentStepName = r.ReportState != null && r.ReportState.CurrentStep != null ? r.ReportState.CurrentStep.Name : null
                 })
                 .ToListAsync();
         }

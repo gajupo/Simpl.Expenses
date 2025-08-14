@@ -10,7 +10,7 @@ namespace Simpl.Expenses.Infrastructure.Persistence.Configurations
         public void Configure(EntityTypeBuilder<ReportState> builder)
         {
             builder.HasKey(rs => rs.ReportId);
-            builder.HasOne(rs => rs.Report).WithOne().HasForeignKey<ReportState>(rs => rs.ReportId).OnDelete(DeleteBehavior.NoAction);
+            builder.HasOne(rs => rs.Report).WithOne(r => r.ReportState).HasForeignKey<ReportState>(rs => rs.ReportId).OnDelete(DeleteBehavior.NoAction);
             builder.HasOne(rs => rs.Workflow).WithMany().HasForeignKey(rs => rs.WorkflowId).OnDelete(DeleteBehavior.NoAction);
             builder.HasOne(rs => rs.CurrentStep).WithMany().HasForeignKey(rs => rs.CurrentStepId).OnDelete(DeleteBehavior.NoAction);
             builder.Property(rs => rs.Status).IsRequired().HasMaxLength(20);

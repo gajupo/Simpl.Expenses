@@ -1,4 +1,5 @@
 using System;
+using Simpl.Expenses.Domain.Enums;
 
 namespace Simpl.Expenses.Application.Dtos.Report
 {
@@ -19,5 +20,8 @@ namespace Simpl.Expenses.Application.Dtos.Report
         public DateTime CreatedAt { get; set; }
         public int? AccountProjectId { get; set; }
         public string AccountProjectName { get; set; }
+        public string? Status { get; set; }
+        public int? CurrentStepId { get; set; }
+        public string CurrentStepName { get; set; }
     }
 }

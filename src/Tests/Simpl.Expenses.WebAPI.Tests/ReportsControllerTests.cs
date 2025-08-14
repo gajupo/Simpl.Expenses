@@ -436,7 +436,13 @@ namespace Simpl.Expenses.WebAPI.Tests
         {
             // Arrange
             var user = await GetFirstAsync<User>(u => u.Username == "testuser");
-            var report1 = await CreateTestReport();
+
+            // Create a report with workflow and state
+            var reportWithState = await CreateTestReportWithWorkflow();
+            var report1 = reportWithState.Item1;
+            var reportState = reportWithState.Item2;
+
+            // Create another simple report
             var report2 = await CreateTestReport();
 
             // Act
@@ -448,21 +454,37 @@ namespace Simpl.Expenses.WebAPI.Tests
             Assert.NotNull(reportsOverview);
             Assert.True(reportsOverview.Count >= 2);
 
-            var reportOverview = reportsOverview.FirstOrDefault(r => r.Id == report1.Id);
-            Assert.NotNull(reportOverview);
-            Assert.Equal(report1.Id, reportOverview.Id);
-            Assert.Equal(report1.ReportNumber, reportOverview.ReportNumber);
-            Assert.Equal(report1.Name, reportOverview.Name);
-            Assert.Equal(report1.Amount, reportOverview.Amount);
-            Assert.Equal(report1.Currency, reportOverview.Currency);
-            Assert.Equal(report1.UserId, reportOverview.UserId);
-            Assert.Equal(report1.ReportTypeId, reportOverview.ReportTypeId);
-            Assert.NotNull(reportOverview.ReportTypeName);
-            Assert.Equal(report1.PlantId, reportOverview.PlantId);
-            Assert.NotNull(reportOverview.PlantName);
-            Assert.Equal(report1.CategoryId, reportOverview.CategoryId);
-            Assert.NotNull(reportOverview.CategoryName);
-            Assert.Equal(report1.CreatedAt.Date, reportOverview.CreatedAt.Date);
+            // Test report with state
+            var reportOverviewWithState = reportsOverview.FirstOrDefault(r => r.Id == report1.Id);
+            Assert.NotNull(reportOverviewWithState);
+            Assert.Equal(report1.Id, reportOverviewWithState.Id);
+            Assert.Equal(report1.ReportNumber, reportOverviewWithState.ReportNumber);
+            Assert.Equal(report1.Name, reportOverviewWithState.Name);
+            Assert.Equal(report1.Amount, reportOverviewWithState.Amount);
+            Assert.Equal(report1.Currency, reportOverviewWithState.Currency);
+            Assert.Equal(report1.UserId, reportOverviewWithState.UserId);
+            Assert.Equal(report1.ReportTypeId, reportOverviewWithState.ReportTypeId);
+            Assert.NotNull(reportOverviewWithState.ReportTypeName);
+            Assert.Equal(report1.PlantId, reportOverviewWithState.PlantId);
+            Assert.NotNull(reportOverviewWithState.PlantName);
+            Assert.Equal(report1.CategoryId, reportOverviewWithState.CategoryId);
+            Assert.NotNull(reportOverviewWithState.CategoryName);
+            Assert.Equal(report1.CreatedAt.Date, reportOverviewWithState.CreatedAt.Date);
+
+            // Test Report State information
+            Assert.NotNull(reportOverviewWithState.Status);
+            Assert.Equal(reportState.Status.ToString(), reportOverviewWithState.Status);
+            Assert.NotNull(reportOverviewWithState.CurrentStepId);
+            Assert.Equal(reportState.CurrentStepId, reportOverviewWithState.CurrentStepId);
+            Assert.NotNull(reportOverviewWithState.CurrentStepName);
+
+            // Test report without state
+            var reportOverviewWithoutState = reportsOverview.FirstOrDefault(r => r.Id == report2.Id);
+            Assert.NotNull(reportOverviewWithoutState);
+            Assert.Equal(report2.Id, reportOverviewWithoutState.Id);
+            Assert.Null(reportOverviewWithoutState.Status);
+            Assert.Null(reportOverviewWithoutState.CurrentStepId);
+            Assert.Null(reportOverviewWithoutState.CurrentStepName);
         }
 
         [Fact]

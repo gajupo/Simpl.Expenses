@@ -34,6 +34,11 @@ namespace Simpl.Expenses.Infrastructure.Persistence.Configurations
             builder.HasOne(r => r.AdvancePaymentDetail)
                 .WithOne(d => d.Report)
                 .HasForeignKey<AdvancePaymentDetail>(d => d.ReportId);
+
+            builder.HasOne(r => r.ReportState)
+                .WithOne(rs => rs.Report)
+                .HasForeignKey<ReportState>(rs => rs.ReportId);
+
             builder.Property(r => r.BankName).HasMaxLength(100);
             builder.Property(r => r.AccountNumber).HasMaxLength(50);
             builder.Property(r => r.Clabe).HasMaxLength(18);
