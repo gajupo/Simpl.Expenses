@@ -11,5 +11,6 @@ namespace Simpl.Expenses.Application.Interfaces
         Task<ReportDto> CreateReportAsync(CreateReportDto createReportDto);
         Task UpdateReportAsync(int id, UpdateReportDto updateReportDto);
         Task DeleteReportAsync(int id);
+        Task<IEnumerable<ReportOverviewDto>> GetReportOverviewByUserIdAsync(int userId);
     }
 }

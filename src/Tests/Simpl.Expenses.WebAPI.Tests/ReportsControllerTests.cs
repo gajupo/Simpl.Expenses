@@ -430,5 +430,64 @@ namespace Simpl.Expenses.WebAPI.Tests
 
             return (report, createdReportState);
         }
+
+        [Fact]
+        public async Task GetReportOverviewByUserId_WhenUserHasReports_ReturnsReportsOverview()
+        {
+            // Arrange
+            var user = await GetFirstAsync<User>(u => u.Username == "testuser");
+            var report1 = await CreateTestReport();
+            var report2 = await CreateTestReport();
+
+            // Act
+            var response = await _client.GetAsync($"/api/reports/overview_by_user/{user.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var reportsOverview = await response.Content.ReadFromJsonAsync<List<ReportOverviewDto>>();
+            Assert.NotNull(reportsOverview);
+            Assert.True(reportsOverview.Count >= 2);
+
+            var reportOverview = reportsOverview.FirstOrDefault(r => r.Id == report1.Id);
+            Assert.NotNull(reportOverview);
+            Assert.Equal(report1.Id, reportOverview.Id);
+            Assert.Equal(report1.ReportNumber, reportOverview.ReportNumber);
+            Assert.Equal(report1.Name, reportOverview.Name);
+            Assert.Equal(report1.Amount, reportOverview.Amount);
+            Assert.Equal(report1.Currency, reportOverview.Currency);
+            Assert.Equal(report1.UserId, reportOverview.UserId);
+            Assert.Equal(report1.ReportTypeId, reportOverview.ReportTypeId);
+            Assert.NotNull(reportOverview.ReportTypeName);
+            Assert.Equal(report1.PlantId, reportOverview.PlantId);
+            Assert.NotNull(reportOverview.PlantName);
+            Assert.Equal(report1.CategoryId, reportOverview.CategoryId);
+            Assert.NotNull(reportOverview.CategoryName);
+            Assert.Equal(report1.CreatedAt.Date, reportOverview.CreatedAt.Date);
+        }
+
+        [Fact]
+        public async Task GetReportOverviewByUserId_WhenUserHasNoReports_ReturnsEmptyList()
+        {
+            // Arrange
+            var user = await AddAsync(new User
+            {
+                Username = "testuser2",
+                Name = "Test User 2",
+                Email = "test2@example.com",
+                PasswordHash = "hash",
+                RoleId = 1,
+                DepartmentId = 1,
+                IsActive = true
+            });
+
+            // Act
+            var response = await _client.GetAsync($"/api/reports/overview_by_user/{user.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var reportsOverview = await response.Content.ReadFromJsonAsync<List<ReportOverviewDto>>();
+            Assert.NotNull(reportsOverview);
+            Assert.Empty(reportsOverview);
+        }
     }
 }

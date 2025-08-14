@@ -94,6 +94,31 @@ namespace Simpl.Expenses.Application.Services
                 .FirstOrDefaultAsync();
         }
 
+        public async Task<IEnumerable<ReportOverviewDto>> GetReportOverviewByUserIdAsync(int userId)
+        {
+            return await _reportRepository.GetAll()
+                .Where(r => r.UserId == userId)
+                .Select(r => new ReportOverviewDto
+                {
+                    Id = r.Id,
+                    ReportNumber = r.ReportNumber,
+                    Name = r.Name,
+                    Amount = r.Amount,
+                    Currency = r.Currency,
+                    UserId = r.UserId,
+                    ReportTypeId = r.ReportTypeId,
+                    ReportTypeName = r.ReportType.Name,
+                    PlantId = r.PlantId,
+                    PlantName = r.Plant.Name,
+                    CategoryId = r.CategoryId,
+                    CategoryName = r.Category.Name,
+                    CreatedAt = r.CreatedAt,
+                    AccountProjectId = r.AccountProjectId,
+                    AccountProjectName = r.AccountProject != null ? r.AccountProject.Name : null
+                })
+                .ToListAsync();
+        }
+
         public async Task UpdateReportAsync(int id, UpdateReportDto updateReportDto)
         {
             var report = await _reportRepository.GetAll()

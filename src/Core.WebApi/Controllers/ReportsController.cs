@@ -78,6 +78,14 @@ namespace Simpl.Expenses.Core.WebApi.Controllers
             return Ok(reportState);
         }
 
+        [HttpGet("overview_by_user/{userId}")]
+        [Authorize(Policy = PermissionCatalog.ExpensesRead)]
+        public async Task<ActionResult<IEnumerable<ReportOverviewDto>>> GetReportOverviewByUserId(int userId)
+        {
+            var reports = await _reportService.GetReportOverviewByUserIdAsync(userId);
+            return Ok(reports);
+        }
+
         [HttpPost("{reportId}/state")]
         [Authorize(Policy = PermissionCatalog.ExpensesUpdate)]
         public async Task<ActionResult<ReportStateDto>> CreateReportState(int reportId, CreateReportStateDto createReportStateDto)

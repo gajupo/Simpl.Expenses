@@ -64,11 +64,11 @@ namespace Simpl.Expenses.Application
             CreateMap<CreateWorkflowDto, Workflow>();
             CreateMap<UpdateWorkflowDto, Workflow>();
 
-                        CreateMap<WorkflowStep, WorkflowStepDto>();
+            CreateMap<WorkflowStep, WorkflowStepDto>();
 
             CreateMap<Permission, PermissionDto>();
             CreateMap<CreatePermissionDto, Permission>();
-                        CreateMap<UpdatePermissionDto, Permission>();
+            CreateMap<UpdatePermissionDto, Permission>();
 
             CreateMap<UserPermission, UserPermissionDto>();
             CreateMap<CreateUserPermissionDto, UserPermission>();
@@ -82,6 +82,12 @@ namespace Simpl.Expenses.Application
                 .ForMember(dest => dest.PurchaseOrderDetail, opt => opt.Ignore())
                 .ForMember(dest => dest.AdvancePaymentDetail, opt => opt.Ignore())
                 .ForMember(dest => dest.ReimbursementDetail, opt => opt.Ignore());
+
+            CreateMap<Report, ReportOverviewDto>()
+                .ForMember(dest => dest.ReportTypeName, opt => opt.MapFrom(src => src.ReportType.Name))
+                .ForMember(dest => dest.PlantName, opt => opt.MapFrom(src => src.Plant.Name))
+                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+                .ForMember(dest => dest.AccountProjectName, opt => opt.MapFrom(src => src.AccountProject != null ? src.AccountProject.Name : null));
 
             CreateMap<PurchaseOrderDetail, PurchaseOrderDetailDto>().ReverseMap();
             CreateMap<CreatePurchaseOrderDetailDto, PurchaseOrderDetail>();
