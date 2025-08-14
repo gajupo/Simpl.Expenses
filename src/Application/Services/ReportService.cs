@@ -120,6 +120,7 @@ namespace Simpl.Expenses.Application.Services
                     CurrentStepId = r.ReportState != null ? (int?)r.ReportState.CurrentStepId : null,
                     CurrentStepName = r.ReportState != null && r.ReportState.CurrentStep != null ? r.ReportState.CurrentStep.Name : null
                 })
+                .Take(10)
                 .ToListAsync();
         }
 
