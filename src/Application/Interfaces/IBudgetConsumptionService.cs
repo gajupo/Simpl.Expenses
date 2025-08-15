@@ -13,5 +13,6 @@ namespace Simpl.Expenses.Application.Interfaces
         Task<IEnumerable<BudgetConsumptionDto>> GetBudgetConsumptionsByDateRangeAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
         Task<IEnumerable<BudgetConsumptionDto>> GetBudgetConsumptionsByDateRangeAndCostCenterAsync(DateTime startDate, DateTime endDate, int costCenterId, CancellationToken cancellationToken = default);
         Task<IEnumerable<BudgetConsumptionDto>> GetBudgetConsumptionsByDateRangeAndAccountProjectAsync(DateTime startDate, DateTime endDate, int accountProjectId, CancellationToken cancellationToken = default);
+        Task<decimal> GetPercentageBudgetConsumptionsByCenterCostAsync(int constCenter, CancellationToken cancellationToken = default);
     }
 }

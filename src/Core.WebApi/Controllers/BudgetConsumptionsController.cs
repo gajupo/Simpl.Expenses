@@ -61,5 +61,12 @@ namespace Simpl.Expenses.WebAPI.Controllers
         {
             return Ok(await _budgetConsumptionService.GetBudgetConsumptionsByDateRangeAndAccountProjectAsync(startDate, endDate, accountProjectId, cancellationToken));
         }
+
+        [HttpGet("percentage-consumptions/{centerCostId}")]
+        [Authorize(Policy = PermissionCatalog.BudgetConsumptionRead)]
+        public async Task<ActionResult<IEnumerable<BudgetConsumptionDto>>> GetTotalBudgetConsumptionsByCenterCost(int centerCostId, CancellationToken cancellationToken)
+        {
+            return Ok(await _budgetConsumptionService.GetPercentageBudgetConsumptionsByCenterCostAsync(centerCostId, cancellationToken));
+        }
     }
 }

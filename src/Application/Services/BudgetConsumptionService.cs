@@ -15,12 +15,14 @@ namespace Simpl.Expenses.Application.Services
     public class BudgetConsumptionService : IBudgetConsumptionService
     {
         private readonly IGenericRepository<BudgetConsumption> _budgetConsumptionRepository;
+        private readonly IGenericRepository<Budget> _budgetRepository;
         private readonly IMapper _mapper;
 
-        public BudgetConsumptionService(IGenericRepository<BudgetConsumption> budgetConsumptionRepository, IMapper mapper)
+        public BudgetConsumptionService(IGenericRepository<BudgetConsumption> budgetConsumptionRepository, IGenericRepository<Budget> budgetRepository, IMapper mapper)
         {
             _budgetConsumptionRepository = budgetConsumptionRepository;
             _mapper = mapper;
+            _budgetRepository = budgetRepository;
         }
 
         public async Task<BudgetConsumptionDto?> GetBudgetConsumptionByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -60,6 +62,24 @@ namespace Simpl.Expenses.Application.Services
                 .Where(bc => bc.ConsumptionDate >= startDate && bc.ConsumptionDate <= endDate && bc.Budget.AccountProjectId == accountProjectId)
                 .ProjectTo<BudgetConsumptionDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
+        }
+
+        public async Task<decimal> GetPercentageBudgetConsumptionsByCenterCostAsync(int constCenter, CancellationToken cancellationToken = default)
+        {
+            var percentageConsumption = _budgetConsumptionRepository.GetAll(cancellationToken)
+                .Where(bc => bc.Budget.CostCenterId == constCenter)
+                .Sum(bc => bc.Amount);
+
+            var totalBudget = _budgetRepository.GetAll(cancellationToken)
+                .Where(b => b.CostCenterId == constCenter)
+                .Sum(b => b.Amount);
+
+            if (totalBudget == 0)
+            {
+                return 0;
+            }
+
+            return Math.Round(percentageConsumption / totalBudget * 100, 2);
         }
     }
 }
