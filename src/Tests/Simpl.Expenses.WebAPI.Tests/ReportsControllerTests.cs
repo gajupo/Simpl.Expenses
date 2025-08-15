@@ -511,5 +511,190 @@ namespace Simpl.Expenses.WebAPI.Tests
             Assert.NotNull(reportsOverview);
             Assert.Empty(reportsOverview);
         }
+
+        [Fact]
+        public async Task GetPendingApprovalCount_WhenUserHasPendingReports_ReturnsCorrectCount()
+        {
+            // Arrange
+            var removedReports = await DeleteAllAsync<Report>();
+            var user = await GetFirstAsync<User>(u => u.Username == "testuser");
+            var plant1 = await GetFirstAsync<Plant>(p => p.Name == "Plant 1");
+            var plant2 = await GetFirstAsync<Plant>(p => p.Name == "Plant 2");
+            var category = await GetFirstAsync<Category>(c => c.Name == "Travel");
+            var costCenter = await GetFirstAsync<CostCenter>(cc => cc.Code == "CC1");
+
+            // Create workflow and report type
+            var workflow = await AddAsync(new Workflow { Name = "Approval Workflow", Description = "Test Approval Workflow" });
+            var step1 = await AddAsync(new WorkflowStep { WorkflowId = workflow.Id, Name = "Initial Step", StepNumber = 1, ApproverRoleId = 1 });
+            var reportType = await AddAsync(new ReportType { Name = "Test Report Type for Approval", DefaultWorkflowId = workflow.Id });
+
+            // Create 3 reports for user in plant1 with Submitted status (pending approval)
+            var report1 = await AddAsync(new Report
+            {
+                Name = "Pending Report 1",
+                Amount = 100m,
+                Currency = "USD",
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant1.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                ReportNumber = "25-00001",
+                BankName = "Test Bank",
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678"
+            });
+
+            var report2 = await AddAsync(new Report
+            {
+                Name = "Pending Report 2",
+                Amount = 200m,
+                Currency = "USD",
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant1.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                ReportNumber = "25-00002",
+                BankName = "Test Bank",
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678"
+            });
+
+            var report3 = await AddAsync(new Report
+            {
+                Name = "Pending Report 3",
+                Amount = 300m,
+                Currency = "USD",
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant2.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                ReportNumber = "25-00003",
+                BankName = "Test Bank",
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678"
+            });
+
+            // Create 1 report for user in plant1 with Approved status (not pending)
+            var report4 = await AddAsync(new Report
+            {
+                Name = "Approved Report",
+                Amount = 400m,
+                Currency = "USD",
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant1.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                ReportNumber = "25-00004",
+                BankName = "Test Bank",
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678"
+            });
+
+            // Create report states - 3 with Submitted status, 1 with Approved status
+            await AddAsync(new ReportState { ReportId = report1.Id, WorkflowId = workflow.Id, CurrentStepId = step1.Id, Status = ReportStatus.Submitted, UpdatedAt = DateTime.UtcNow });
+            await AddAsync(new ReportState { ReportId = report2.Id, WorkflowId = workflow.Id, CurrentStepId = step1.Id, Status = ReportStatus.Submitted, UpdatedAt = DateTime.UtcNow });
+            await AddAsync(new ReportState { ReportId = report3.Id, WorkflowId = workflow.Id, CurrentStepId = step1.Id, Status = ReportStatus.Submitted, UpdatedAt = DateTime.UtcNow });
+            await AddAsync(new ReportState { ReportId = report4.Id, WorkflowId = workflow.Id, CurrentStepId = step1.Id, Status = ReportStatus.Approved, UpdatedAt = DateTime.UtcNow });
+
+            // Create report for different user (should not be counted)
+            var otherUser = await AddAsync(new User
+            {
+                Username = "otheruser",
+                Name = "Other User",
+                Email = "other@example.com",
+                PasswordHash = "hash",
+                RoleId = 1,
+                DepartmentId = 1,
+                IsActive = true
+            });
+
+            var reportOtherUser = await AddAsync(new Report
+            {
+                Name = "Other User Report",
+                Amount = 500m,
+                Currency = "USD",
+                UserId = otherUser.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant1.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                ReportNumber = "25-00005",
+                BankName = "Test Bank",
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678"
+            });
+
+            await AddAsync(new ReportState { ReportId = reportOtherUser.Id, WorkflowId = workflow.Id, CurrentStepId = step1.Id, Status = ReportStatus.Submitted, UpdatedAt = DateTime.UtcNow });
+
+            // Act & Assert - Test with plant1 only (should return 2)
+            var plant1Ids = new int[] { plant1.Id };
+            var response1 = await _client.GetAsync($"/api/reports/pending_approval_count/{user.Id}?plantIds={plant1.Id}");
+            response1.EnsureSuccessStatusCode();
+            var count1 = await response1.Content.ReadFromJsonAsync<int>();
+            Assert.Equal(2, count1); // report1 and report2 are pending in plant1
+
+            // Act & Assert - Test with plant2 only (should return 1)
+            var plant2Ids = new int[] { plant2.Id };
+            var response2 = await _client.GetAsync($"/api/reports/pending_approval_count/{user.Id}?plantIds={plant2.Id}");
+            response2.EnsureSuccessStatusCode();
+            var count2 = await response2.Content.ReadFromJsonAsync<int>();
+            Assert.Equal(1, count2); // report3 is pending in plant2
+
+            // Act & Assert - Test with both plants (should return 3)
+            var bothPlantIds = new int[] { plant1.Id, plant2.Id };
+            var response3 = await _client.GetAsync($"/api/reports/pending_approval_count/{user.Id}?plantIds={plant1.Id}&plantIds={plant2.Id}");
+            response3.EnsureSuccessStatusCode();
+            var count3 = await response3.Content.ReadFromJsonAsync<int>();
+            Assert.Equal(3, count3); // report1, report2, and report3 are pending
+
+            // Act & Assert - Test with non-existent plant (should return 0)
+            var nonExistentPlantId = 99999;
+            var response4 = await _client.GetAsync($"/api/reports/pending_approval_count/{user.Id}?plantIds={nonExistentPlantId}");
+            response4.EnsureSuccessStatusCode();
+            var count4 = await response4.Content.ReadFromJsonAsync<int>();
+            Assert.Equal(0, count4); // no reports in non-existent plant
+
+            // Act & Assert - Test with empty plant array (should return 0)
+            var response5 = await _client.GetAsync($"/api/reports/pending_approval_count/{user.Id}");
+            response5.EnsureSuccessStatusCode();
+            var count5 = await response5.Content.ReadFromJsonAsync<int>();
+            Assert.Equal(0, count5); // no plantIds provided should return 0
+
+            // revert deleted reports, others test might be affected
+            foreach (var report in removedReports)
+            {
+                await AddAsync(report);
+            }
+        }
+
+        [Fact]
+        public async Task GetPendingApprovalCount_WhenUserHasNoReports_ReturnsZero()
+        {
+            // Arrange
+            var user = await AddAsync(new User
+            {
+                Username = "userwithnoreports",
+                Name = "User With No Reports",
+                Email = "noreports@example.com",
+                PasswordHash = "hash",
+                RoleId = 1,
+                DepartmentId = 1,
+                IsActive = true
+            });
+
+            var plant = await GetFirstAsync<Plant>(p => p.Name == "Plant 1");
+
+            // Act
+            var response = await _client.GetAsync($"/api/reports/pending_approval_count/{user.Id}?plantIds={plant.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var count = await response.Content.ReadFromJsonAsync<int>();
+            Assert.Equal(0, count);
+        }
     }
 }

@@ -12,5 +12,6 @@ namespace Simpl.Expenses.Application.Interfaces
         Task UpdateReportAsync(int id, UpdateReportDto updateReportDto);
         Task DeleteReportAsync(int id);
         Task<IEnumerable<ReportOverviewDto>> GetReportOverviewByUserIdAsync(int userId);
+        Task<int> GetPendingApprovalCountAsync(int userId, int[] plantIds);
     }
 }

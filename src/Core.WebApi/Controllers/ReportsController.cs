@@ -98,5 +98,13 @@ namespace Simpl.Expenses.Core.WebApi.Controllers
             var createdReportState = await _reportStateService.CreateReportStateAsync(createReportStateDto);
             return Ok(createdReportState);
         }
+
+        [HttpGet("pending_approval_count/{userId}")]
+        [Authorize(Policy = PermissionCatalog.ExpensesApprove)]
+        public async Task<ActionResult<int>> GetPendingApprovalCount(int userId, [FromQuery] int[] plantIds)
+        {
+            var count = await _reportService.GetPendingApprovalCountAsync(userId, plantIds);
+            return Ok(count);
+        }
     }
 }

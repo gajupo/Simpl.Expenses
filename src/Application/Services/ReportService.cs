@@ -142,6 +142,12 @@ namespace Simpl.Expenses.Application.Services
             }
         }
 
+        public async Task<int> GetPendingApprovalCountAsync(int userId, int[] plantIds)
+        {
+            return await _reportRepository.GetAll()
+                .CountAsync(r => r.ReportState != null && r.ReportState.Status == ReportStatus.Submitted && r.UserId == userId && plantIds.Contains(r.PlantId));
+        }
+
         private void UpdateReportDetails(Report report, CreateReportDto createReportDto)
         {
             report.PurchaseOrderDetail = null;
@@ -232,5 +238,6 @@ namespace Simpl.Expenses.Application.Services
             var nextId = (lastReport?.Id ?? 0) + 1;
             return $"{year}-{nextId:D5}";
         }
+
     }
 }
