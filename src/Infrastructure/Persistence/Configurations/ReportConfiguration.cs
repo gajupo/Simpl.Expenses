@@ -15,7 +15,7 @@ namespace Simpl.Expenses.Infrastructure.Persistence.Configurations
             builder.Property(r => r.Name).IsRequired().HasMaxLength(255);
             builder.Property(r => r.Amount).HasColumnType("decimal(18, 2)");
             builder.Property(r => r.Currency).IsRequired().HasMaxLength(3).HasDefaultValue("MXN");
-            builder.HasOne(r => r.User).WithMany().HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.NoAction);
+            builder.HasOne(r => r.User).WithMany(u => u.Reports).HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.NoAction);
             builder.HasOne(r => r.ReportType).WithMany().HasForeignKey(r => r.ReportTypeId).OnDelete(DeleteBehavior.NoAction);
             builder.HasOne(r => r.Plant).WithMany().HasForeignKey(r => r.PlantId).OnDelete(DeleteBehavior.NoAction);
             builder.HasOne(r => r.Category).WithMany().HasForeignKey(r => r.CategoryId).OnDelete(DeleteBehavior.NoAction);

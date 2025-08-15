@@ -88,6 +88,12 @@ namespace Simpl.Expenses.WebAPI.Tests
             var reportDto = await response.Content.ReadFromJsonAsync<ReportDto>();
             Assert.NotNull(reportDto);
             Assert.Equal(report.Id, reportDto.Id);
+            Assert.Equal(report.Plant.Name, reportDto.PlantName);
+            Assert.Equal(report.Category.Name, reportDto.CategoryName);
+            Assert.Equal(report.CostCenter.Name, reportDto.CostCenterName);
+            Assert.Equal(report.ReportNumber, reportDto.ReportNumber);
+            Assert.Equal(report.Supplier.Name, reportDto.SupplierName);
+            Assert.Equal(report.ReportType.Name, reportDto.ReportTypeName);
         }
 
         [Fact]
@@ -279,6 +285,8 @@ namespace Simpl.Expenses.WebAPI.Tests
             var plant = await GetFirstAsync<Plant>(p => p.Name == "Plant 1");
             var category = await GetFirstAsync<Category>(c => c.Name == "Travel");
             var costCenter = await GetFirstAsync<CostCenter>(cc => cc.Code == "CC1");
+            var supplier = await GetFirstAsync<Supplier>(s => s.Name == "Supplier 1");
+
 
             var report = new Report
             {
@@ -298,7 +306,8 @@ namespace Simpl.Expenses.WebAPI.Tests
                 {
                     EmployeeName = "Test Employee",
                     EmployeeNumber = "E123"
-                }
+                },
+                SupplierId = supplier.Id
             };
             await AddAsync(report);
             return report;

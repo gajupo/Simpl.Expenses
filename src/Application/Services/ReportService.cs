@@ -89,10 +89,12 @@ namespace Simpl.Expenses.Application.Services
 
         public async Task<ReportDto> GetReportByIdAsync(int id)
         {
-            return await _reportRepository.GetAll()
+            var report = await _reportRepository.GetAll()
                 .Where(r => r.Id == id)
                 .ProjectTo<ReportDto>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
+
+            return report ?? new ReportDto();
         }
 
         public async Task<IEnumerable<ReportOverviewDto>> GetReportOverviewByUserIdAsync(int userId)

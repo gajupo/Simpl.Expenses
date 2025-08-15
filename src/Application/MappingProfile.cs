@@ -76,7 +76,13 @@ namespace Simpl.Expenses.Application
             CreateMap<CreateWorkflowStepDto, WorkflowStep>();
             CreateMap<UpdateWorkflowStepDto, WorkflowStep>();
 
-            CreateMap<Report, ReportDto>().ReverseMap();
+            CreateMap<Report, ReportDto>()
+                .ForMember(dest => dest.ReportTypeName, opt => opt.MapFrom(src => src.ReportType.Name))
+                .ForMember(dest => dest.PlantName, opt => opt.MapFrom(src => src.Plant.Name))
+                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+                .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.Supplier != null ? src.Supplier.Name : null))
+                .ForMember(dest => dest.CostCenterName, opt => opt.MapFrom(src => src.CostCenter != null ? src.CostCenter.Name : null))
+                .ForMember(dest => dest.AccountProjectName, opt => opt.MapFrom(src => src.AccountProject != null ? src.AccountProject.Name : null));
             CreateMap<CreateReportDto, Report>();
             CreateMap<UpdateReportDto, Report>()
                 .ForMember(dest => dest.PurchaseOrderDetail, opt => opt.Ignore())
