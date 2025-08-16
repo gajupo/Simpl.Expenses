@@ -66,13 +66,13 @@ namespace Simpl.Expenses.Application.Services
 
         public async Task<decimal> GetPercentageBudgetConsumptionsByCenterCostAsync(int constCenter, CancellationToken cancellationToken = default)
         {
-            var percentageConsumption = _budgetConsumptionRepository.GetAll(cancellationToken)
+            var percentageConsumption = await _budgetConsumptionRepository.GetAll(cancellationToken)
                 .Where(bc => bc.Budget.CostCenterId == constCenter)
-                .Sum(bc => bc.Amount);
+                .SumAsync(bc => bc.Amount, cancellationToken);
 
-            var totalBudget = _budgetRepository.GetAll(cancellationToken)
+            var totalBudget = await _budgetRepository.GetAll(cancellationToken)
                 .Where(b => b.CostCenterId == constCenter)
-                .Sum(b => b.Amount);
+                .SumAsync(b => b.Amount, cancellationToken);
 
             if (totalBudget == 0)
             {

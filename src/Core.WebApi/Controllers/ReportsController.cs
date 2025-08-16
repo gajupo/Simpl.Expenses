@@ -16,10 +16,13 @@ namespace Simpl.Expenses.Core.WebApi.Controllers
         private readonly IReportService _reportService;
         private readonly IReportStateService _reportStateService;
 
-        public ReportsController(IReportService reportService, IReportStateService reportStateService)
+        private readonly ILogger<ReportsController> _logger;
+
+        public ReportsController(IReportService reportService, ILogger<ReportsController> logger, IReportStateService reportStateService)
         {
             _reportService = reportService;
             _reportStateService = reportStateService;
+            _logger = logger;
         }
 
         [HttpGet]

@@ -8,6 +8,7 @@ namespace Simpl.Expenses.Domain.Enums
         Approved,
         Rejected,
         Paid,
-        Cancelled
+        Cancelled,
+        RequestChanges
     }
 }
