@@ -18,7 +18,7 @@ namespace Simpl.Expenses.Infrastructure.Persistence.Configurations
             builder.HasOne(bc => bc.Report)
                 .WithMany()
                 .HasForeignKey(bc => bc.ReportId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.Property(bc => bc.Amount)
                 .HasColumnType("decimal(18, 2)");

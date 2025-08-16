@@ -25,19 +25,20 @@ namespace Simpl.Expenses.Infrastructure.Persistence.Configurations
 
             builder.HasOne(r => r.PurchaseOrderDetail)
                 .WithOne(d => d.Report)
-                .HasForeignKey<PurchaseOrderDetail>(d => d.ReportId);
+                .HasForeignKey<PurchaseOrderDetail>(d => d.ReportId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(r => r.ReimbursementDetail)
                 .WithOne(d => d.Report)
-                .HasForeignKey<ReimbursementDetail>(d => d.ReportId);
+                .HasForeignKey<ReimbursementDetail>(d => d.ReportId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(r => r.AdvancePaymentDetail)
                 .WithOne(d => d.Report)
-                .HasForeignKey<AdvancePaymentDetail>(d => d.ReportId);
+                .HasForeignKey<AdvancePaymentDetail>(d => d.ReportId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasOne(r => r.ReportState)
-                .WithOne(rs => rs.Report)
-                .HasForeignKey<ReportState>(rs => rs.ReportId);
+            
 
             builder.Property(r => r.BankName).HasMaxLength(100);
             builder.Property(r => r.AccountNumber).HasMaxLength(50);
