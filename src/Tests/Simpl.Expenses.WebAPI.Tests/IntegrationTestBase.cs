@@ -66,6 +66,13 @@ namespace Simpl.Expenses.WebAPI.Tests
             return _context.Set<T>();
         }
 
+        protected async Task<T> UpdateAsync<T>(T entity) where T : class
+        {
+            _context.Set<T>().Update(entity);
+            await _context.SaveChangesAsync();
+            return entity;
+        }
+
         protected Task<T> RemoveEntityAsync<T>(T entity) where T : class
         {
             _context.Set<T>().Remove(entity);

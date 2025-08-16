@@ -705,5 +705,64 @@ namespace Simpl.Expenses.WebAPI.Tests
             var count = await response.Content.ReadFromJsonAsync<int>();
             Assert.Equal(0, count);
         }
+
+        [Fact]
+        public async Task SubmitReport_AfterChanges_UpdatesReportAndSetsStatusToSubmitted()
+        {
+            // Arrange
+            var (report, initialReportState) = await CreateTestReportWithWorkflow();
+
+            var reportStateToUpdate = await GetFirstAsync<ReportState>(rs => rs.ReportId == report.Id);
+            reportStateToUpdate.Status = ReportStatus.RequestChanges;
+            await UpdateAsync(reportStateToUpdate);
+
+            var usoCfdi = await GetFirstAsync<UsoCFDI>(u => u.Clave == "G01");
+            var incoterm = await GetFirstAsync<Incoterm>(i => i.Clave == "CIF");
+
+            var updateDto = new UpdateReportDto
+            {
+                Name = "Updated Report After Changes Requested",
+                Amount = 450.00m,
+                Currency = "EUR",
+                UserId = report.UserId,
+                ReportTypeId = report.ReportTypeId,
+                PlantId = report.PlantId,
+                CategoryId = report.CategoryId,
+                CostCenterId = report.CostCenterId,
+                BankName = "Updated Bank Name",
+                AccountNumber = "9876543210",
+                Clabe = "987654321098765432",
+                PurchaseOrderDetail = new UpdatePurchaseOrderDetailDto
+                {
+                    UsoCfdiId = usoCfdi.Id,
+                    IncotermId = incoterm.Id
+                }
+            };
+
+            // Act
+            var response = await _client.PutAsJsonAsync($"/api/reports/{report.Id}/submit", updateDto);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+            var getReportResponse = await _client.GetAsync($"/api/reports/{report.Id}");
+            getReportResponse.EnsureSuccessStatusCode();
+            var updatedReport = await getReportResponse.Content.ReadFromJsonAsync<ReportDto>();
+
+            Assert.NotNull(updatedReport);
+            Assert.Equal(updateDto.Name, updatedReport.Name);
+            Assert.Equal(updateDto.Amount, updatedReport.Amount);
+            Assert.Equal(updateDto.PlantId, updatedReport.PlantId);
+            Assert.NotNull(updatedReport.PurchaseOrderDetail);
+            Assert.Equal(updateDto.PurchaseOrderDetail.IncotermId, updatedReport.PurchaseOrderDetail.IncotermId);
+
+            var getStateResponse = await _client.GetAsync($"/api/reports/{report.Id}/state");
+            getStateResponse.EnsureSuccessStatusCode();
+            var updatedReportState = await getStateResponse.Content.ReadFromJsonAsync<ReportStateDto>();
+
+            Assert.NotNull(updatedReportState);
+            Assert.Equal(ReportStatus.Submitted, updatedReportState.Status);
+        }
     }
 }

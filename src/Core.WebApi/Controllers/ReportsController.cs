@@ -61,6 +61,14 @@ namespace Simpl.Expenses.Core.WebApi.Controllers
             return NoContent();
         }
 
+        [HttpPut("{id}/submit")]
+        [Authorize(Policy = PermissionCatalog.ExpensesUpdate)]
+        public async Task<IActionResult> SubmitReport(int id, UpdateReportDto updateReportDto)
+        {
+            await _reportService.UpdateReportAndSubmitAsync(id, updateReportDto);
+            return NoContent();
+        }
+
         [HttpDelete("{id}")]
         [Authorize(Policy = PermissionCatalog.ExpensesDelete)]
         public async Task<IActionResult> DeleteReport(int id)

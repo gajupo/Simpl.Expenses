@@ -241,5 +241,40 @@ namespace Simpl.Expenses.Application.Services
             return $"{year}-{nextId:D5}";
         }
 
+        public async Task UpdateReportAndSubmitAsync(int id, UpdateReportDto updateReportDto)
+        {
+            var report = await _reportRepository.GetAll()
+                .AsTracking() // ensure the graph is tracked for updates
+                .Include(r => r.PurchaseOrderDetail)
+                .Include(r => r.ReimbursementDetail)
+                .Include(r => r.AdvancePaymentDetail)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (report == null)
+            {
+                throw new KeyNotFoundException($"Report with ID {id} not found.");
+            }
+
+            // map report data except ReimbursementDetail, PurchaseOrderDetail, AdvancePaymentDetail
+            _mapper.Map(updateReportDto, report);
+            UpdateReportDetails(report, updateReportDto);
+            await _reportRepository.UpdateAsync(report);
+
+            // get current report state
+            var currentState = await _reportStateService.GetReportStateByReportIdAsync(id);
+            if (currentState == null)
+            {
+                throw new InvalidOperationException($"Report state for report ID {id} not found.");
+            }
+            // move report to next stage
+            var newReportState = new CreateReportStateDto
+            {
+                ReportId = id,
+                WorkflowId = currentState.WorkflowId,
+                CurrentStepId = currentState.CurrentStepId,
+                Status = ReportStatus.Submitted
+            };
+            await _reportStateService.CreateReportStateAsync(newReportState);
+        }
     }
 }
