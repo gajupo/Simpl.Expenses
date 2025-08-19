@@ -57,5 +57,12 @@ namespace Simpl.Expenses.WebAPI.Controllers
             await _approvalLogService.DeleteApprovalLogAsync(id);
             return NoContent();
         }
+
+        [HttpGet("report/{reportId}")]
+        public async Task<ActionResult<IEnumerable<ApprovalLogHistoryDto>>> GetApprovalLogsByReportId(int reportId)
+        {
+            var approvalLogs = await _approvalLogService.GetApprovalLogsByReportIdAsync(reportId);
+            return Ok(approvalLogs);
+        }
     }
 }

@@ -12,5 +12,6 @@ namespace Simpl.Expenses.Application.Interfaces
         Task<ApprovalLogDto> CreateApprovalLogAsync(CreateApprovalLogDto createApprovalLogDto, CancellationToken cancellationToken = default);
         Task UpdateApprovalLogAsync(int id, UpdateApprovalLogDto updateApprovalLogDto, CancellationToken cancellationToken = default);
         Task DeleteApprovalLogAsync(int id, CancellationToken cancellationToken = default);
+        Task<IEnumerable<ApprovalLogHistoryDto>> GetApprovalLogsByReportIdAsync(int reportId, CancellationToken cancellationToken = default);
     }
 }

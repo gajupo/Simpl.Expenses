@@ -53,6 +53,14 @@ namespace Simpl.Expenses.Core.WebApi.Controllers
             return CreatedAtAction(nameof(GetReportById), new { id = createdReport.Id }, createdReport);
         }
 
+        [HttpPost("draft")]
+        [Authorize(Policy = PermissionCatalog.ExpensesCreate)]
+        public async Task<ActionResult<ReportDto>> CreateReportAsDraft(CreateReportDto createReportDto)
+        {
+            var createdReport = await _reportService.CreateReportAsDraftAsync(createReportDto);
+            return CreatedAtAction(nameof(GetReportById), new { id = createdReport.Id }, createdReport);
+        }
+
         [HttpPut("{id}")]
         [Authorize(Policy = PermissionCatalog.ExpensesUpdate)]
         public async Task<IActionResult> UpdateReport(int id, UpdateReportDto updateReportDto)

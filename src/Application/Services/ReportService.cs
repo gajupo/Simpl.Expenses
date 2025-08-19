@@ -276,5 +276,44 @@ namespace Simpl.Expenses.Application.Services
             };
             await _reportStateService.CreateReportStateAsync(newReportState);
         }
+
+        public async Task<ReportDto> CreateReportAsDraftAsync(CreateReportDto createReportDto)
+        {
+            var report = _mapper.Map<Report>(createReportDto);
+            report.ReportNumber = await GenerateReportNumberAsync();
+
+            UpdateReportDetails(report, createReportDto);
+
+            await _reportRepository.AddAsync(report);
+
+            var reportTypeWorkflowInfo = await _reportTypeRepository.GetAll()
+                .Where(rt => rt.Id == report.ReportTypeId).FirstOrDefaultAsync();
+
+            if (reportTypeWorkflowInfo?.DefaultWorkflowId == null) throw new InvalidOperationException("Report type does not have a default workflow.");
+
+            var workflowInfo = await _reportTypeRepository.GetAll()
+                .Where(rt => rt.Id == report.ReportTypeId)
+                .Select(rt => new
+                {
+                    WorkflowId = rt.DefaultWorkflow.Id,
+                    Steps = rt.DefaultWorkflow.Steps.OrderBy(s => s.StepNumber).Select(s => new { s.Id }).ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            if (workflowInfo?.Steps.Any() == true)
+            {
+                var firstStepId = workflowInfo.Steps.First().Id;
+                var createReportStateDto = new CreateReportStateDto
+                {
+                    ReportId = report.Id,
+                    WorkflowId = workflowInfo.WorkflowId,
+                    CurrentStepId = firstStepId,
+                    Status = ReportStatus.Draft
+                };
+                await _reportStateService.CreateReportStateAsync(createReportStateDto);
+            }
+
+            return _mapper.Map<ReportDto>(report);
+        }
     }
 }

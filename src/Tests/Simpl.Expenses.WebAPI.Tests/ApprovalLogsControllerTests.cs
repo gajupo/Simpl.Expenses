@@ -174,5 +174,36 @@ namespace Simpl.Expenses.WebAPI.Tests
             response.EnsureSuccessStatusCode();
             Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }
+
+        [Fact]
+        public async Task GetApprovalLogsByReportId_WhenExists_ReturnsOkWithCorrectData()
+        {
+            // Arrange
+            var approvalLog = new ApprovalLog
+            {
+                ReportId = testReport.Id,
+                UserId = testUser.Id,
+                User = testUser,
+                Action = ApprovalAction.Approved,
+                Comment = "Test Comment for history",
+                LogDate = new DateTime(2025, 8, 18, 10, 30, 0, DateTimeKind.Utc)
+            };
+            await AddAsync(approvalLog);
+
+            // Act
+            var response = await _client.GetAsync($"/api/approval-logs/report/{testReport.Id}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var dtos = await response.Content.ReadFromJsonAsync<List<ApprovalLogHistoryDto>>();
+            Assert.NotNull(dtos);
+            Assert.NotEmpty(dtos);
+            var dto = dtos.First();
+            Assert.Equal(testUser.Id, dto.UserId);
+            Assert.Equal(testUser.Name, dto.UserName);
+            Assert.Equal(ApprovalAction.Approved.ToString(), dto.ApprovalActionName);
+            Assert.Equal("18/08/2025 10:30:00", dto.LogDate);
+            Assert.Equal(approvalLog.Comment, dto.Comment);
+        }
     }
 }

@@ -64,5 +64,14 @@ namespace Simpl.Expenses.Application.Services
                 await _approvalLogRepository.RemoveAsync(approvalLog, cancellationToken);
             }
         }
+
+        public async Task<IEnumerable<ApprovalLogHistoryDto>> GetApprovalLogsByReportIdAsync(int reportId, CancellationToken cancellationToken = default)
+        {
+            return await _approvalLogRepository.GetAll(cancellationToken)
+                .Where(a => a.ReportId == reportId)
+                .OrderByDescending(a => a.LogDate)
+                .ProjectTo<ApprovalLogHistoryDto>(_mapper.ConfigurationProvider)
+                .ToListAsync(cancellationToken);
+        }
     }
 }

@@ -125,6 +125,11 @@ namespace Simpl.Expenses.Application
             CreateMap<UpdateApprovalLogDto, ApprovalLog>();
 
             CreateMap<ReportAttachment, ReportAttachmentDto>();
+
+            CreateMap<ApprovalLog, ApprovalLogHistoryDto>()
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.Name))
+                .ForMember(dest => dest.ApprovalActionName, opt => opt.MapFrom(src => src.Action.ToString()))
+                .ForMember(dest => dest.LogDate, opt => opt.MapFrom(src => src.LogDate.ToString("dd/MM/yyyy hh:mm:ss")));
         }
     }
 }
