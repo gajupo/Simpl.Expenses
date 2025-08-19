@@ -116,6 +116,8 @@ namespace Simpl.Expenses.Application.Services
                     CategoryId = r.CategoryId,
                     CategoryName = r.Category.Name,
                     CreatedAt = r.CreatedAt,
+                    ReportDescription = r.ReportDescription,
+                    ReportDate = r.ReportDate,
                     AccountProjectId = r.AccountProjectId,
                     AccountProjectName = r.AccountProject != null ? r.AccountProject.Name : null,
                     Status = r.ReportState != null ? r.ReportState.Status.ToString() : null,

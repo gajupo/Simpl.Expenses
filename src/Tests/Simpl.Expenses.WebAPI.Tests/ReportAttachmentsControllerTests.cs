@@ -69,7 +69,9 @@ namespace Simpl.Expenses.WebAPI.Tests
                 AccountNumber = "1234567890",
                 BankName = "Test Bank",
                 Currency = "USD",
-                Clabe = "123456789012345678"
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                ReportDate = DateTime.UtcNow
             };
             await AddAsync(testReport);
         }

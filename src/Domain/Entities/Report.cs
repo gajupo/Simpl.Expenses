@@ -23,7 +23,9 @@ namespace Simpl.Expenses.Domain.Entities
         public string BankName { get; set; }
         public string AccountNumber { get; set; }
         public string Clabe { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public string ReportDescription { get; set; }
+        public DateTime ReportDate { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public int CostCenterId { get; set; }
         public CostCenter CostCenter { get; set; }

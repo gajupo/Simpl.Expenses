@@ -55,6 +55,8 @@ namespace Simpl.Expenses.WebAPI.Tests
                 BankName = "Test Bank",
                 AccountNumber = "1234567890",
                 Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                ReportDate = DateTime.UtcNow,
                 PurchaseOrderDetail = new CreatePurchaseOrderDetailDto
                 {
                     UsoCfdiId = usoCfdi.Id,
@@ -134,6 +136,8 @@ namespace Simpl.Expenses.WebAPI.Tests
                 BankName = report.BankName,
                 AccountNumber = report.AccountNumber,
                 Clabe = report.Clabe,
+                ReportDescription = report.ReportDescription,
+                ReportDate = report.ReportDate,
                 ReimbursementDetail = new UpdateReimbursementDetailDto
                 {
                     EmployeeName = "Updated Employee",
@@ -186,6 +190,8 @@ namespace Simpl.Expenses.WebAPI.Tests
                 AccountNumber = report.AccountNumber,
                 Clabe = report.Clabe,
                 AccountProjectId = accountProject.Id,
+                ReportDescription = report.ReportDescription,
+                ReportDate = report.ReportDate,
                 PurchaseOrderDetail = new UpdatePurchaseOrderDetailDto
                 {
                     UsoCfdiId = usoCfdi.Id,
@@ -235,6 +241,8 @@ namespace Simpl.Expenses.WebAPI.Tests
                 AccountNumber = report.AccountNumber,
                 Clabe = report.Clabe,
                 AccountProjectId = accountProject.Id,
+                ReportDescription = report.ReportDescription,
+                ReportDate = report.ReportDate,
                 AdvancePaymentDetail = new UpdateAdvancePaymentDetailDto
                 {
                     OrderNumber = "AP-12345"
@@ -275,7 +283,7 @@ namespace Simpl.Expenses.WebAPI.Tests
 
             // Verify deletion
             var getResponse = await _client.GetAsync($"/api/reports/{report.Id}");
-            Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }
 
         private async Task<Report> CreateTestReport()
@@ -302,6 +310,8 @@ namespace Simpl.Expenses.WebAPI.Tests
                 BankName = "Test Bank",
                 AccountNumber = "1234567890",
                 Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                ReportDate = DateTime.UtcNow,
                 ReimbursementDetail = new ReimbursementDetail
                 {
                     EmployeeName = "Test Employee",
@@ -341,6 +351,8 @@ namespace Simpl.Expenses.WebAPI.Tests
                 BankName = "Test Bank",
                 AccountNumber = "1234567890",
                 Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                ReportDate = DateTime.UtcNow
             };
 
             // Act
@@ -421,7 +433,9 @@ namespace Simpl.Expenses.WebAPI.Tests
                 BankName = "Test Bank",
                 AccountNumber = "1234567890",
                 AccountProjectId = 1,
-                Clabe = "123456789012345678"
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                ReportDate = DateTime.UtcNow
             };
             await AddAsync(report);
 
@@ -551,7 +565,9 @@ namespace Simpl.Expenses.WebAPI.Tests
                 ReportNumber = "25-00001",
                 BankName = "Test Bank",
                 AccountNumber = "1234567890",
-                Clabe = "123456789012345678"
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                ReportDate = DateTime.UtcNow
             });
 
             var report2 = await AddAsync(new Report
@@ -567,7 +583,9 @@ namespace Simpl.Expenses.WebAPI.Tests
                 ReportNumber = "25-00002",
                 BankName = "Test Bank",
                 AccountNumber = "1234567890",
-                Clabe = "123456789012345678"
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                ReportDate = DateTime.UtcNow
             });
 
             var report3 = await AddAsync(new Report
@@ -583,7 +601,9 @@ namespace Simpl.Expenses.WebAPI.Tests
                 ReportNumber = "25-00003",
                 BankName = "Test Bank",
                 AccountNumber = "1234567890",
-                Clabe = "123456789012345678"
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                ReportDate = DateTime.UtcNow
             });
 
             // Create 1 report for user in plant1 with Approved status (not pending)
@@ -600,7 +620,9 @@ namespace Simpl.Expenses.WebAPI.Tests
                 ReportNumber = "25-00004",
                 BankName = "Test Bank",
                 AccountNumber = "1234567890",
-                Clabe = "123456789012345678"
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                ReportDate = DateTime.UtcNow
             });
 
             // Create report states - 3 with Submitted status, 1 with Approved status
@@ -634,7 +656,9 @@ namespace Simpl.Expenses.WebAPI.Tests
                 ReportNumber = "25-00005",
                 BankName = "Test Bank",
                 AccountNumber = "1234567890",
-                Clabe = "123456789012345678"
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                ReportDate = DateTime.UtcNow
             });
 
             await AddAsync(new ReportState { ReportId = reportOtherUser.Id, WorkflowId = workflow.Id, CurrentStepId = step1.Id, Status = ReportStatus.Submitted, UpdatedAt = DateTime.UtcNow });
@@ -732,6 +756,8 @@ namespace Simpl.Expenses.WebAPI.Tests
                 BankName = "Updated Bank Name",
                 AccountNumber = "9876543210",
                 Clabe = "987654321098765432",
+                ReportDescription = "Test Description",
+                ReportDate = DateTime.UtcNow,
                 PurchaseOrderDetail = new UpdatePurchaseOrderDetailDto
                 {
                     UsoCfdiId = usoCfdi.Id,

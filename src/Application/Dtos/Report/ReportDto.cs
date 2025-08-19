@@ -9,6 +9,8 @@ namespace Simpl.Expenses.Application.Dtos.Report
         public string Name { get; set; }
         public decimal Amount { get; set; }
         public string Currency { get; set; }
+        public string ReportDescription { get; set; }
+        public DateTime ReportDate { get; set; }
         public int UserId { get; set; }
         public int ReportTypeId { get; set; }
         public string ReportTypeName { get; set; }

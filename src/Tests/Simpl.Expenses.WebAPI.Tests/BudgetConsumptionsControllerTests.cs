@@ -32,7 +32,7 @@ namespace Simpl.Expenses.WebAPI.Tests
             var plant = await AddAsync(new Plant { Name = "Test Plant" });
             var category = await AddAsync(new Category { Name = "Test Category", Icon = "test-icon" });
             var budget = await AddAsync(new Budget { Amount = 1000, StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow.AddDays(30) });
-            var report = await AddAsync(new Report { ReportNumber = "R001", Name = "Report 1", Amount = 100, Currency = "USD", BankName = "Test Bank", AccountNumber = "12345", Clabe = "123456789012345678", ReportTypeId = reportType.Id, PlantId = plant.Id, CategoryId = category.Id });
+            var report = await AddAsync(new Report { ReportNumber = "R001", Name = "Report 1", Amount = 100, Currency = "USD", BankName = "Test Bank", AccountNumber = "12345", Clabe = "123456789012345678", ReportTypeId = reportType.Id, PlantId = plant.Id, CategoryId = category.Id, ReportDescription = "Test Description", ReportDate = DateTime.UtcNow });
             var consumption = await AddAsync(new BudgetConsumption { BudgetId = budget.Id, ReportId = report.Id, Amount = 50, ConsumptionDate = DateTime.UtcNow });
 
             // Act
@@ -57,7 +57,7 @@ namespace Simpl.Expenses.WebAPI.Tests
             var plant = await AddAsync(new Plant { Name = "Test Plant" });
             var category = await AddAsync(new Category { Name = "Test Category", Icon = "test-icon" });
             var budget = await AddAsync(new Budget { Amount = 1000, StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow.AddDays(30) });
-            var report = await AddAsync(new Report { ReportNumber = "R001", Name = "Report 1", Amount = 100, Currency = "USD", BankName = "Test Bank", AccountNumber = "12345", Clabe = "123456789012345678", ReportTypeId = reportType.Id, PlantId = plant.Id, CategoryId = category.Id });
+            var report = await AddAsync(new Report { ReportNumber = "R001", Name = "Report 1", Amount = 100, Currency = "USD", BankName = "Test Bank", AccountNumber = "12345", Clabe = "123456789012345678", ReportTypeId = reportType.Id, PlantId = plant.Id, CategoryId = category.Id, ReportDescription = "Test Description", ReportDate = DateTime.UtcNow });
             await AddAsync(new BudgetConsumption { BudgetId = budget.Id, ReportId = report.Id, Amount = 50, ConsumptionDate = DateTime.UtcNow });
             await AddAsync(new BudgetConsumption { BudgetId = budget.Id, ReportId = report.Id, Amount = 75, ConsumptionDate = DateTime.UtcNow });
 
@@ -82,7 +82,7 @@ namespace Simpl.Expenses.WebAPI.Tests
             var plant = await AddAsync(new Plant { Name = "Test Plant" });
             var category = await AddAsync(new Category { Name = "Test Category", Icon = "test-icon" });
             var budget = await AddAsync(new Budget { Amount = 1000, StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow.AddDays(30) });
-            var report = await AddAsync(new Report { ReportNumber = "R001", Name = "Report 1", Amount = 100, Currency = "USD", BankName = "Test Bank", AccountNumber = "12345", Clabe = "123456789012345678", ReportTypeId = reportType.Id, PlantId = plant.Id, CategoryId = category.Id });
+            var report = await AddAsync(new Report { ReportNumber = "R001", Name = "Report 1", Amount = 100, Currency = "USD", BankName = "Test Bank", AccountNumber = "12345", Clabe = "123456789012345678", ReportTypeId = reportType.Id, PlantId = plant.Id, CategoryId = category.Id, ReportDescription = "Test Description", ReportDate = DateTime.UtcNow });
             await AddAsync(new BudgetConsumption { BudgetId = budget.Id, ReportId = report.Id, Amount = 50, ConsumptionDate = DateTime.UtcNow.AddDays(-5) });
             await AddAsync(new BudgetConsumption { BudgetId = budget.Id, ReportId = report.Id, Amount = 75, ConsumptionDate = DateTime.UtcNow });
 
@@ -108,7 +108,7 @@ namespace Simpl.Expenses.WebAPI.Tests
             var category = await AddAsync(new Category { Name = "Test Category", Icon = "test-icon" });
             var costCenter = await AddAsync(new CostCenter { Name = "CC Test", Code = "CCT" });
             var budget = await AddAsync(new Budget { Amount = 1000, CostCenterId = costCenter.Id, StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow.AddDays(30) });
-            var report = await AddAsync(new Report { ReportNumber = "R001", Name = "Report 1", Amount = 100, Currency = "USD", BankName = "Test Bank", AccountNumber = "12345", Clabe = "123456789012345678", ReportTypeId = reportType.Id, PlantId = plant.Id, CategoryId = category.Id });
+            var report = await AddAsync(new Report { ReportNumber = "R001", Name = "Report 1", Amount = 100, Currency = "USD", BankName = "Test Bank", AccountNumber = "12345", Clabe = "123456789012345678", ReportTypeId = reportType.Id, PlantId = plant.Id, CategoryId = category.Id, ReportDescription = "Test Description", ReportDate = DateTime.UtcNow });
             await AddAsync(new BudgetConsumption { BudgetId = budget.Id, ReportId = report.Id, Amount = 50, ConsumptionDate = DateTime.UtcNow });
 
             // Act
@@ -133,7 +133,7 @@ namespace Simpl.Expenses.WebAPI.Tests
             var category = await AddAsync(new Category { Name = "Test Category", Icon = "test-icon" });
             var project = await AddAsync(new AccountProject { Name = "AP Test", Code = "APT" });
             var budget = await AddAsync(new Budget { Amount = 1000, AccountProjectId = project.Id, StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow.AddDays(30) });
-            var report = await AddAsync(new Report { ReportNumber = "R001", Name = "Report 1", Amount = 100, Currency = "USD", BankName = "Test Bank", AccountNumber = "12345", Clabe = "123456789012345678", ReportTypeId = reportType.Id, PlantId = plant.Id, CategoryId = category.Id });
+            var report = await AddAsync(new Report { ReportNumber = "R001", Name = "Report 1", Amount = 100, Currency = "USD", BankName = "Test Bank", AccountNumber = "12345", Clabe = "123456789012345678", ReportTypeId = reportType.Id, PlantId = plant.Id, CategoryId = category.Id, ReportDescription = "Test Description", ReportDate = DateTime.UtcNow });
             await AddAsync(new BudgetConsumption { BudgetId = budget.Id, ReportId = report.Id, Amount = 50, ConsumptionDate = DateTime.UtcNow });
 
             // Act
@@ -186,7 +186,9 @@ namespace Simpl.Expenses.WebAPI.Tests
                 ReportNumber = "25-90003",
                 AccountNumber = "1234567890",
                 BankName = "Test Bank",
-                Clabe = "123456789012345678"
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                ReportDate = DateTime.UtcNow
             };
             await AddAsync(report1);
 
@@ -211,7 +213,9 @@ namespace Simpl.Expenses.WebAPI.Tests
                 ReportNumber = "25-90004",
                 AccountNumber = "1234567890",
                 BankName = "Test Bank",
-                Clabe = "123456789012345678"
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                ReportDate = DateTime.UtcNow
             };
             await AddAsync(report2);
 
