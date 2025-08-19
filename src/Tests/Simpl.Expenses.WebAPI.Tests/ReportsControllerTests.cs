@@ -790,5 +790,52 @@ namespace Simpl.Expenses.WebAPI.Tests
             Assert.NotNull(updatedReportState);
             Assert.Equal(ReportStatus.Submitted, updatedReportState.Status);
         }
+
+        [Fact]
+        public async Task CreateReport_ShouldCreateApprovalLog_WithSubmittedAction()
+        {
+            // Arrange
+            var user = await GetFirstAsync<User>(u => u.Username == "padmin");
+            var plant = await GetFirstAsync<Plant>(p => p.Name == "Plant 1");
+            var category = await GetFirstAsync<Category>(c => c.Name == "Travel");
+            var costCenter = await GetFirstAsync<CostCenter>(cc => cc.Code == "CC1");
+
+            var workflow = await AddAsync(new Workflow { Name = "Approval Log Test Workflow", Description = "Workflow for testing approval log creation" });
+            await AddAsync(new WorkflowStep { WorkflowId = workflow.Id, Name = "Approval Log Test Step", StepNumber = 1, ApproverRoleId = 1 });
+
+            var reportType = await AddAsync(new ReportType { Name = "Approval Log Test Report Type", DefaultWorkflowId = workflow.Id });
+
+            var createReportDto = new CreateReportDto
+            {
+                Name = "Test Report for Approval Log",
+                Amount = 250.75m,
+                Currency = "USD",
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                BankName = "Test Bank",
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                ReportDate = DateTime.UtcNow
+            };
+
+            // Act
+            var response = await _client.PostAsJsonAsync("/api/reports", createReportDto);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+            var reportDto = await response.Content.ReadFromJsonAsync<ReportDto>();
+            Assert.NotNull(reportDto);
+
+            var approvalLog = await GetFirstAsync<ApprovalLog>(al => al.ReportId == reportDto.Id);
+            Assert.NotNull(approvalLog);
+            Assert.Equal(user.Id, approvalLog.UserId);
+            Assert.Equal(ApprovalAction.Submitted, approvalLog.Action);
+            Assert.Equal("Enviado para aprovación", approvalLog.Comment);
+        }
     }
 }

@@ -10,6 +10,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System;
+using Simpl.Expenses.Application.Dtos;
+using Microsoft.Extensions.Logging;
 
 namespace Simpl.Expenses.Application.Services
 {
@@ -18,18 +20,24 @@ namespace Simpl.Expenses.Application.Services
         private readonly IGenericRepository<Report> _reportRepository;
         private readonly IGenericRepository<ReportType> _reportTypeRepository;
         private readonly IReportStateService _reportStateService;
+        private readonly IApprovalLogService _approvalLogService;
         private readonly IMapper _mapper;
+        private readonly ILogger<ReportService> _logger;
 
         public ReportService(
             IGenericRepository<Report> reportRepository,
             IGenericRepository<ReportType> reportTypeRepository,
             IReportStateService reportStateService,
-            IMapper mapper)
+            IApprovalLogService approvalLogService,
+            IMapper mapper,
+            ILogger<ReportService> logger)
         {
             _reportRepository = reportRepository;
             _reportTypeRepository = reportTypeRepository;
             _reportStateService = reportStateService;
+            _approvalLogService = approvalLogService;
             _mapper = mapper;
+            _logger = logger;
         }
 
         public async Task<ReportDto> CreateReportAsync(CreateReportDto createReportDto)
@@ -40,6 +48,7 @@ namespace Simpl.Expenses.Application.Services
             UpdateReportDetails(report, createReportDto);
 
             await _reportRepository.AddAsync(report);
+            _logger.LogInformation($"Report created with ID: {report.Id} and Report Number: {report.ReportNumber}");
 
             var reportTypeWorkflowInfo = await _reportTypeRepository.GetAll()
                 .Where(rt => rt.Id == report.ReportTypeId).FirstOrDefaultAsync();
@@ -66,7 +75,20 @@ namespace Simpl.Expenses.Application.Services
                     Status = ReportStatus.Submitted
                 };
                 await _reportStateService.CreateReportStateAsync(createReportStateDto);
+                _logger.LogInformation($"Report state created for Report ID: {report.Id} with status {createReportStateDto.Status}");
             }
+
+            // insert submitted approval log
+            var createApprovalLogDto = new CreateApprovalLogDto
+            {
+                ReportId = report.Id,
+                UserId = report.UserId,
+                Action = ApprovalAction.Submitted,
+                Comment = "Enviado para aprovación"
+            };
+
+            await _approvalLogService.CreateApprovalLogAsync(createApprovalLogDto);
+            _logger.LogInformation($"Approval log created for Report ID: {report.Id} with action {createApprovalLogDto.Action} and user ID {createApprovalLogDto.UserId}");
 
             return _mapper.Map<ReportDto>(report);
         }
