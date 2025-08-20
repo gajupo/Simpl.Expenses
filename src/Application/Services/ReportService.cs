@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System;
 using Simpl.Expenses.Application.Dtos;
 using Microsoft.Extensions.Logging;
+using Simpl.Expenses.Application.Dtos.Common;
 
 namespace Simpl.Expenses.Application.Services
 {
@@ -338,6 +339,64 @@ namespace Simpl.Expenses.Application.Services
             }
 
             return _mapper.Map<ReportDto>(report);
+        }
+
+        public async Task<PaginatedResultDto<ReportOverviewDto>> GetReportsByUserIdAsync(int userId, int pageNumber, int pageSize, DateTime? startDate, DateTime? endDate, string? searchText)
+        {
+            var query = _reportRepository.GetAll().Where(r => r.UserId == userId);
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(r => r.ReportDate >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(r => r.ReportDate <= endDate.Value);
+            }
+
+            if (!string.IsNullOrEmpty(searchText))
+            {
+                var searchTextLower = searchText.ToLower();
+                query = query.Where(r =>
+                    r.Name.ToLower().Contains(searchTextLower) ||
+                    r.Amount.ToString().Contains(searchTextLower) ||
+                    r.ReportType.Name.ToLower().Contains(searchTextLower) ||
+                    r.ReportNumber.ToLower().Contains(searchTextLower));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var reports = await query
+                .OrderByDescending(r => r.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(r => new ReportOverviewDto
+                {
+                    Id = r.Id,
+                    ReportNumber = r.ReportNumber,
+                    Name = r.Name,
+                    Amount = r.Amount,
+                    Currency = r.Currency,
+                    UserId = r.UserId,
+                    ReportTypeId = r.ReportTypeId,
+                    ReportTypeName = r.ReportType.Name,
+                    PlantId = r.Plant.Id,
+                    PlantName = r.Plant.Name,
+                    CategoryId = r.Category.Id,
+                    CategoryName = r.Category.Name,
+                    CreatedAt = r.CreatedAt,
+                    ReportDescription = r.ReportDescription,
+                    ReportDate = r.ReportDate,
+                    AccountProjectId = r.AccountProjectId,
+                    AccountProjectName = r.AccountProject != null ? r.AccountProject.Name : null,
+                    Status = r.ReportState != null ? r.ReportState.Status.ToString() : null,
+                    CurrentStepId = r.ReportState != null ? (int?)r.ReportState.CurrentStepId : null,
+                    CurrentStepName = r.ReportState != null && r.ReportState.CurrentStep != null ? r.ReportState.CurrentStep.Name : null
+                })
+                .ToListAsync();
+
+            return new PaginatedResultDto<ReportOverviewDto>(reports, totalCount, pageNumber, pageSize);
         }
     }
 }

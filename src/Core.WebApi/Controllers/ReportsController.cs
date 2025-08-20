@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Simpl.Expenses.Application.Dtos.Common;
 using Simpl.Expenses.Application.Dtos.Report;
 using Simpl.Expenses.Application.Dtos.ReportState;
 using Simpl.Expenses.Application.Interfaces;
 using Simpl.Expenses.Domain.Constants;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -102,6 +104,14 @@ namespace Simpl.Expenses.Core.WebApi.Controllers
         public async Task<ActionResult<IEnumerable<ReportOverviewDto>>> GetReportOverviewByUserId(int userId)
         {
             var reports = await _reportService.GetReportOverviewByUserIdAsync(userId);
+            return Ok(reports);
+        }
+
+        [HttpGet("user/{userId}")]
+        [Authorize(Policy = PermissionCatalog.ExpensesRead)]
+        public async Task<ActionResult<PaginatedResultDto<ReportOverviewDto>>> GetReportsByUserId(int userId, [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] string? searchText, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            var reports = await _reportService.GetReportsByUserIdAsync(userId, pageNumber, pageSize, startDate, endDate, searchText);
             return Ok(reports);
         }
 

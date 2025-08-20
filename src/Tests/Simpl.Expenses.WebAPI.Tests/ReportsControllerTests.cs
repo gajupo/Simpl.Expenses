@@ -9,6 +9,7 @@ using Xunit;
 using System.Collections.Generic;
 using Core.WebApi;
 using System.Linq;
+using Simpl.Expenses.Application.Dtos.Common;
 
 namespace Simpl.Expenses.WebAPI.Tests
 {
@@ -836,6 +837,333 @@ namespace Simpl.Expenses.WebAPI.Tests
             Assert.Equal(user.Id, approvalLog.UserId);
             Assert.Equal(ApprovalAction.Submitted, approvalLog.Action);
             Assert.Equal("Enviado para aprovación", approvalLog.Comment);
+        }
+
+        [Fact]
+        public async Task GetReportsByUserId_WithPagination_ReturnsPaginatedResult()
+        {
+            // Arrange
+            var user = await GetFirstAsync<User>(u => u.Username == "testuser");
+            var reportType = await GetFirstAsync<ReportType>(rt => rt.Name == "Reimbursement");
+            var plant = await GetFirstAsync<Plant>(p => p.Name == "Plant 1");
+            var category = await GetFirstAsync<Category>(c => c.Name == "Travel");
+            var costCenter = await GetFirstAsync<CostCenter>(cc => cc.Code == "CC1");
+
+            for (int i = 0; i < 15; i++)
+            {
+                await AddAsync(new Report
+                {
+                    Name = $"Report {i}",
+                    Amount = 100 + i,
+                    Currency = "USD",
+                    UserId = user.Id,
+                    ReportTypeId = reportType.Id,
+                    PlantId = plant.Id,
+                    CategoryId = category.Id,
+                    CostCenterId = costCenter.Id,
+                    ReportNumber = $"25-100{i:D2}",
+                    BankName = "Test Bank",
+                    AccountNumber = "1234567890",
+                    Clabe = "123456789012345678",
+                    ReportDescription = "Test Description",
+                    ReportDate = DateTime.UtcNow
+                });
+            }
+
+            var pageNumber = 2;
+            var pageSize = 5;
+
+            // Act
+            var response = await _client.GetAsync($"/api/reports/user/{user.Id}?pageNumber={pageNumber}&pageSize={pageSize}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var paginatedResult = await response.Content.ReadFromJsonAsync<PaginatedResultDto<ReportOverviewDto>>();
+
+            Assert.NotNull(paginatedResult);
+            Assert.Equal(pageSize, paginatedResult.Items.Count);
+            Assert.Equal(15, paginatedResult.TotalCount);
+            Assert.Equal(pageNumber, paginatedResult.PageNumber);
+            Assert.Equal(pageSize, paginatedResult.PageSize);
+            Assert.All(paginatedResult.Items, item => Assert.Equal(user.Id, item.UserId));
+        }
+
+        [Fact]
+        public async Task GetReportsByUserId_WithDateRangeFilter_ReturnsFilteredResult()
+        {
+            // Arrange
+            var user = await GetFirstAsync<User>(u => u.Username == "testuser");
+            var reportType = await GetFirstAsync<ReportType>(rt => rt.Name == "Reimbursement");
+            var plant = await GetFirstAsync<Plant>(p => p.Name == "Plant 1");
+            var category = await GetFirstAsync<Category>(c => c.Name == "Travel");
+            var costCenter = await GetFirstAsync<CostCenter>(cc => cc.Code == "CC1");
+
+            await AddAsync(new Report
+            {
+                Name = "Report 1",
+                Amount = 100,
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                ReportNumber = "25-00001",
+                ReportDate = new DateTime(2025, 8, 1),
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                BankName = "Test Bank",
+                Currency = "USD"
+            });
+            await AddAsync(new Report
+            {
+                Name = "Report 2",
+                Amount = 200,
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                ReportNumber = "25-00002",
+                ReportDate = new DateTime(2025, 8, 10),
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                BankName = "Test Bank",
+                Currency = "USD"
+            });
+            await AddAsync(new Report
+            {
+                Name = "Report 3",
+                Amount = 300,
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                ReportNumber = "25-00003",
+                ReportDate = new DateTime(2025, 8, 20),
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                BankName = "Test Bank",
+                Currency = "USD"
+            });
+
+            var startDate = new DateTime(2025, 8, 5);
+            var endDate = new DateTime(2025, 8, 15);
+
+            // Act
+            var response = await _client.GetAsync($"/api/reports/user/{user.Id}?startDate={startDate:O}&endDate={endDate:O}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var paginatedResult = await response.Content.ReadFromJsonAsync<PaginatedResultDto<ReportOverviewDto>>();
+            Assert.NotNull(paginatedResult);
+            Assert.Equal(1, paginatedResult.TotalCount);
+            Assert.Equal("Report 2", paginatedResult.Items.First().Name);
+        }
+
+        [Fact]
+        public async Task GetReportsByUserId_WithSearchTextFilter_ReturnsFilteredResult()
+        {
+            // Arrange
+            var user = await GetFirstAsync<User>(u => u.Username == "testuser");
+            var reportType = await GetFirstAsync<ReportType>(rt => rt.Name == "Reimbursement");
+            var plant = await GetFirstAsync<Plant>(p => p.Name == "Plant 1");
+            var category = await GetFirstAsync<Category>(c => c.Name == "Travel");
+            var costCenter = await GetFirstAsync<CostCenter>(cc => cc.Code == "CC1");
+
+            await AddAsync(new Report
+            {
+                Name = "My Special Report",
+                Amount = 100,
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                ReportNumber = "25-00001",
+                ReportDate = DateTime.UtcNow,
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                BankName = "Test Bank",
+                Currency = "USD"
+            });
+            await AddAsync(new Report
+            {
+                Name = "Another Report",
+                Amount = 200,
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                ReportNumber = "25-00002",
+                ReportDate = DateTime.UtcNow,
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                BankName = "Test Bank",
+                Currency = "USD"
+            });
+            await AddAsync(new Report
+            {
+                Name = "Just a report",
+                Amount = 300,
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                ReportNumber = "25-00003",
+                ReportDate = DateTime.UtcNow,
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                BankName = "Test Bank",
+                Currency = "USD"
+            });
+
+            var searchText = "Special";
+
+            // Act
+            var response = await _client.GetAsync($"/api/reports/user/{user.Id}?searchText={searchText}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var paginatedResult = await response.Content.ReadFromJsonAsync<PaginatedResultDto<ReportOverviewDto>>();
+            Assert.NotNull(paginatedResult);
+            Assert.Equal(1, paginatedResult.TotalCount);
+            Assert.Equal("My Special Report", paginatedResult.Items.First().Name);
+        }
+
+        [Fact]
+        public async Task GetReportsByUserId_WithCombinedFilters_ReturnsFilteredResult()
+        {
+            // Arrange
+            var user = await GetFirstAsync<User>(u => u.Username == "testuser");
+            var reportType = await GetFirstAsync<ReportType>(rt => rt.Name == "Reimbursement");
+            var plant = await GetFirstAsync<Plant>(p => p.Name == "Plant 1");
+            var category = await GetFirstAsync<Category>(c => c.Name == "Travel");
+            var costCenter = await GetFirstAsync<CostCenter>(cc => cc.Code == "CC1");
+
+            await AddAsync(new Report
+            {
+                Name = "Filtered Report 1",
+                Amount = 100,
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                ReportNumber = "25-00001",
+                ReportDate = new DateTime(2025, 8, 1),
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                BankName = "Test Bank",
+                Currency = "USD"
+            });
+            await AddAsync(new Report
+            {
+                Name = "Filtered Report 2",
+                Amount = 200,
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                ReportNumber = "25-00002",
+                ReportDate = new DateTime(2025, 8, 10),
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                BankName = "Test Bank",
+                Currency = "USD"
+            });
+            await AddAsync(new Report
+            {
+                Name = "Another Report",
+                Amount = 300,
+                UserId = user.Id,
+                ReportTypeId = reportType.Id,
+                PlantId = plant.Id,
+                CategoryId = category.Id,
+                CostCenterId = costCenter.Id,
+                ReportNumber = "25-00003",
+                ReportDate = new DateTime(2025, 8, 12),
+                AccountNumber = "1234567890",
+                Clabe = "123456789012345678",
+                ReportDescription = "Test Description",
+                BankName = "Test Bank",
+                Currency = "USD"
+            });
+
+            var startDate = new DateTime(2025, 8, 5);
+            var endDate = new DateTime(2025, 8, 15);
+            var searchText = "Filtered";
+
+            // Act
+            var response = await _client.GetAsync($"/api/reports/user/{user.Id}?startDate={startDate:O}&endDate={endDate:O}&searchText={searchText}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var paginatedResult = await response.Content.ReadFromJsonAsync<PaginatedResultDto<ReportOverviewDto>>();
+            Assert.NotNull(paginatedResult);
+            Assert.Equal(1, paginatedResult.TotalCount);
+            Assert.Equal("Filtered Report 2", paginatedResult.Items.First().Name);
+        }
+
+        [Fact]
+        public async Task GetReportsByUserId_WithPaginationAndFilters_ReturnsPaginatedAndFilteredResult()
+        {
+            // Arrange
+            var user = await GetFirstAsync<User>(u => u.Username == "testuser");
+            var reportType = await GetFirstAsync<ReportType>(rt => rt.Name == "Reimbursement");
+            var plant = await GetFirstAsync<Plant>(p => p.Name == "Plant 1");
+            var category = await GetFirstAsync<Category>(c => c.Name == "Travel");
+            var costCenter = await GetFirstAsync<CostCenter>(cc => cc.Code == "CC1");
+
+            for (int i = 0; i < 20; i++)
+            {
+                await AddAsync(new Report
+                {
+                    Name = $"Searchable Report {i}",
+                    Amount = 100 + i,
+                    UserId = user.Id,
+                    ReportTypeId = reportType.Id,
+                    PlantId = plant.Id,
+                    CategoryId = category.Id,
+                    CostCenterId = costCenter.Id,
+                    ReportNumber = $"25-100{i:D2}",
+                    ReportDate = DateTime.UtcNow.AddDays(i),
+                    AccountNumber = "1234567890",
+                    Clabe = "123456789012345678",
+                    ReportDescription = "Test Description",
+                    BankName = "Test Bank",
+                    Currency = "USD"
+                });
+            }
+
+            var searchText = "Searchable";
+            var pageNumber = 2;
+            var pageSize = 5;
+
+            // Act
+            var response = await _client.GetAsync($"/api/reports/user/{user.Id}?searchText={searchText}&pageNumber={pageNumber}&pageSize={pageSize}");
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var paginatedResult = await response.Content.ReadFromJsonAsync<PaginatedResultDto<ReportOverviewDto>>();
+
+            Assert.NotNull(paginatedResult);
+            Assert.Equal(pageSize, paginatedResult.Items.Count);
+            Assert.Equal(20, paginatedResult.TotalCount);
+            Assert.Equal(pageNumber, paginatedResult.PageNumber);
+            Assert.Equal(pageSize, paginatedResult.PageSize);
+            Assert.All(paginatedResult.Items, item => Assert.Contains(searchText, item.Name));
         }
     }
 }

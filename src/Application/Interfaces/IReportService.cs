@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Simpl.Expenses.Application.Dtos.Common;
 using Simpl.Expenses.Application.Dtos.Report;
 
 namespace Simpl.Expenses.Application.Interfaces
@@ -15,5 +17,6 @@ namespace Simpl.Expenses.Application.Interfaces
         Task<IEnumerable<ReportOverviewDto>> GetReportOverviewByUserIdAsync(int userId);
         Task<int> GetPendingApprovalCountAsync(int userId, int[] plantIds);
         Task UpdateReportAndSubmitAsync(int id, UpdateReportDto updateReportDto);
+        Task<PaginatedResultDto<ReportOverviewDto>> GetReportsByUserIdAsync(int userId, int pageNumber, int pageSize, DateTime? startDate, DateTime? endDate, string? searchText);
     }
 }
