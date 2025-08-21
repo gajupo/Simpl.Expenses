@@ -9,11 +9,13 @@ namespace Simpl.Expenses.Application.Services
     public class CostCenterService : ICostCenterService
     {
         private readonly IGenericRepository<CostCenter> _costCenterRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public CostCenterService(IGenericRepository<CostCenter> costCenterRepository, IMapper mapper)
+        public CostCenterService(IGenericRepository<CostCenter> costCenterRepository, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _costCenterRepository = costCenterRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -33,6 +35,7 @@ namespace Simpl.Expenses.Application.Services
         {
             var costCenter = _mapper.Map<CostCenter>(createCostCenterDto);
             await _costCenterRepository.AddAsync(costCenter, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<CostCenterDto>(costCenter);
         }
 
@@ -44,6 +47,7 @@ namespace Simpl.Expenses.Application.Services
             _mapper.Map(updateCostCenterDto, costCenter);
 
             await _costCenterRepository.UpdateAsync(costCenter, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteCostCenterAsync(int id, CancellationToken cancellationToken = default)
@@ -52,6 +56,7 @@ namespace Simpl.Expenses.Application.Services
             if (costCenter != null)
             {
                 await _costCenterRepository.RemoveAsync(costCenter, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
         }
     }

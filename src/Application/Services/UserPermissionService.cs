@@ -10,11 +10,13 @@ namespace Simpl.Expenses.Application.Services;
 public class UserPermissionService : IUserPermissionService
 {
     private readonly IGenericRepository<UserPermission> _userPermissionRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public UserPermissionService(IGenericRepository<UserPermission> userPermissionRepository, IMapper mapper)
+    public UserPermissionService(IGenericRepository<UserPermission> userPermissionRepository, IUnitOfWork unitOfWork, IMapper mapper)
     {
         _userPermissionRepository = userPermissionRepository;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -30,6 +32,7 @@ public class UserPermissionService : IUserPermissionService
     {
         var userPermission = _mapper.Map<UserPermission>(createUserPermissionDto);
         await _userPermissionRepository.AddAsync(userPermission, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         return _mapper.Map<UserPermissionDto>(userPermission);
     }
 
@@ -43,6 +46,7 @@ public class UserPermissionService : IUserPermissionService
         _mapper.Map(updateUserPermissionDto, userPermission);
 
         await _userPermissionRepository.UpdateAsync(userPermission, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     public async Task RemovePermissionFromUserAsync(int userId, int permissionId, CancellationToken cancellationToken = default)
@@ -53,6 +57,7 @@ public class UserPermissionService : IUserPermissionService
         if (userPermission != null)
         {
             await _userPermissionRepository.RemoveAsync(userPermission, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }
 }

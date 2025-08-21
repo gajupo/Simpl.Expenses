@@ -18,5 +18,7 @@ namespace Simpl.Expenses.Application.Interfaces
         Task<int> GetPendingApprovalCountAsync(int userId, int[] plantIds);
         Task UpdateReportAndSubmitAsync(int id, UpdateReportDto updateReportDto);
         Task<PaginatedResultDto<ReportOverviewDto>> GetReportsByUserIdAsync(int userId, int pageNumber, int pageSize, DateTime? startDate, DateTime? endDate, string? searchText);
+        Task<PaginatedResultDto<ReportOverviewDto>> GetPendingApprovalReportsByRoleIdAsync(int roleId, string? searchText, int pageNumber, int pageSize);
+        Task ApproveReportAsync(int reportId, int userId);
     }
 }

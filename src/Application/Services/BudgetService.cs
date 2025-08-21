@@ -14,11 +14,13 @@ namespace Simpl.Expenses.Application.Services
     public class BudgetService : IBudgetService
     {
         private readonly IGenericRepository<Budget> _budgetRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public BudgetService(IGenericRepository<Budget> budgetRepository, IMapper mapper)
+        public BudgetService(IGenericRepository<Budget> budgetRepository, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _budgetRepository = budgetRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -41,6 +43,7 @@ namespace Simpl.Expenses.Application.Services
         {
             var budget = _mapper.Map<Budget>(createBudgetDto);
             await _budgetRepository.AddAsync(budget, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<BudgetDto>(budget);
         }
 
@@ -52,6 +55,7 @@ namespace Simpl.Expenses.Application.Services
             _mapper.Map(updateBudgetDto, budget);
 
             await _budgetRepository.UpdateAsync(budget, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteBudgetAsync(int id, CancellationToken cancellationToken = default)
@@ -60,6 +64,7 @@ namespace Simpl.Expenses.Application.Services
             if (budget != null)
             {
                 await _budgetRepository.RemoveAsync(budget, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
         }
     }

@@ -11,12 +11,14 @@ namespace Simpl.Expenses.Application.Services
     {
         private readonly IGenericRepository<User> _userRepository;
         private readonly IGenericRepository<UserPlant> _userPlantRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public UserService(IGenericRepository<User> userRepository, IGenericRepository<UserPlant> userPlantRepository, IMapper mapper)
+        public UserService(IGenericRepository<User> userRepository, IGenericRepository<UserPlant> userPlantRepository, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _userRepository = userRepository;
             _userPlantRepository = userPlantRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -111,6 +113,7 @@ namespace Simpl.Expenses.Application.Services
             var user = _mapper.Map<User>(createUserDto);
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(createUserDto.Password);
             await _userRepository.AddAsync(user, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<UserDto>(user);
         }
@@ -123,6 +126,7 @@ namespace Simpl.Expenses.Application.Services
             _mapper.Map(updateUserDto, user);
 
             await _userRepository.UpdateAsync(user, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteUserAsync(int id, CancellationToken cancellationToken = default)
@@ -131,6 +135,7 @@ namespace Simpl.Expenses.Application.Services
             if (user != null)
             {
                 await _userRepository.RemoveAsync(user, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
         }
     }

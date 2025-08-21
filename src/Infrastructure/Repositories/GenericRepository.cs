@@ -28,16 +28,14 @@ namespace Simpl.Expenses.Infrastructure.Repositories
         public async Task AddAsync(T entity, CancellationToken cancellationToken = default)
         {
             await _dbSet.AddAsync(entity, cancellationToken);
-            await _context.SaveChangesAsync(cancellationToken);
         }
 
         public async Task AddRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
         {
             await _dbSet.AddRangeAsync(entities, cancellationToken);
-            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
+        public Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
         {
             var entry = _context.Entry(entity);
 
@@ -47,19 +45,19 @@ namespace Simpl.Expenses.Infrastructure.Repositories
                 entry.State = EntityState.Modified;
             }
 
-            await _context.SaveChangesAsync(cancellationToken);
+            return Task.CompletedTask;
         }
 
-        public async Task RemoveAsync(T entity, CancellationToken cancellationToken = default)
+        public Task RemoveAsync(T entity, CancellationToken cancellationToken = default)
         {
             _dbSet.Remove(entity);
-            await _context.SaveChangesAsync(cancellationToken);
+            return Task.CompletedTask;
         }
 
-        public async Task RemoveRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
+        public Task RemoveRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
         {
             _dbSet.RemoveRange(entities);
-            await _context.SaveChangesAsync(cancellationToken);
+            return Task.CompletedTask;
         }
     }
 }

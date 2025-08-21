@@ -9,11 +9,13 @@ namespace Simpl.Expenses.Application.Services
     public class RoleService : IRoleService
     {
         private readonly IGenericRepository<Role> _roleRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public RoleService(IGenericRepository<Role> roleRepository, IMapper mapper)
+        public RoleService(IGenericRepository<Role> roleRepository, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _roleRepository = roleRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -33,6 +35,7 @@ namespace Simpl.Expenses.Application.Services
         {
             var role = _mapper.Map<Role>(createRoleDto);
             await _roleRepository.AddAsync(role, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<RoleDto>(role);
         }
 
@@ -44,6 +47,7 @@ namespace Simpl.Expenses.Application.Services
             _mapper.Map(updateRoleDto, role);
 
             await _roleRepository.UpdateAsync(role, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteRoleAsync(int id, CancellationToken cancellationToken = default)
@@ -52,6 +56,7 @@ namespace Simpl.Expenses.Application.Services
             if (role != null)
             {
                 await _roleRepository.RemoveAsync(role, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
         }
     }

@@ -20,6 +20,7 @@ namespace Simpl.Expenses.Application.Services
     {
         private readonly IGenericRepository<ReportAttachment> _attachmentRepository;
         private readonly IGenericRepository<Report> _reportRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly FileStorageSettings _fileStorageSettings;
         private readonly string[] _allowedExtensions = { ".pdf", ".docx", ".xmls", ".doc", ".xlsx", ".xls", ".png", ".jpg", ".jpeg", ".tiff" };
@@ -27,11 +28,13 @@ namespace Simpl.Expenses.Application.Services
         public ReportAttachmentService(
             IGenericRepository<ReportAttachment> attachmentRepository,
             IGenericRepository<Report> reportRepository,
+            IUnitOfWork unitOfWork,
             IMapper mapper,
             IOptions<FileStorageSettings> fileStorageSettings)
         {
             _attachmentRepository = attachmentRepository;
             _reportRepository = reportRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
             _fileStorageSettings = fileStorageSettings.Value;
         }
@@ -77,49 +80,59 @@ namespace Simpl.Expenses.Application.Services
 
             var createdAttachments = new List<ReportAttachmentDto>();
 
-            foreach (var file in files)
+            await _unitOfWork.BeginTransactionAsync(cancellationToken);
+            try
             {
-                var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-                if (!_allowedExtensions.Contains(extension))
+                foreach (var file in files)
                 {
-                    throw new ArgumentException($"File type not allowed: {file.FileName}");
-                }
-
-                var filePath = Path.Combine(directoryPath, file.FileName);
-
-                var existingAttachment = await _attachmentRepository.GetAll()
-                    .FirstOrDefaultAsync(a => a.ReportId == reportId && a.FileName == file.FileName, cancellationToken);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.Content.CopyToAsync(stream, cancellationToken);
-                }
-
-                if (existingAttachment != null)
-                {
-                    existingAttachment.FileSizeKb = (int)(file.Length / 1024);
-                    existingAttachment.MimeType = file.ContentType;
-                    existingAttachment.UploadedAt = DateTime.UtcNow;
-                    existingAttachment.UploadedByUserId = userId;
-                    await _attachmentRepository.UpdateAsync(existingAttachment, cancellationToken);
-                    createdAttachments.Add(_mapper.Map<ReportAttachmentDto>(existingAttachment));
-                }
-                else
-                {
-                    var newAttachment = new ReportAttachment
+                    var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                    if (!_allowedExtensions.Contains(extension))
                     {
-                        ReportId = reportId,
-                        UploadedByUserId = userId,
-                        FileName = file.FileName,
-                        FilePath = filePath,
-                        FileSizeKb = (int)(file.Length / 1024),
-                        MimeType = file.ContentType,
-                        UploadedAt = DateTime.UtcNow
-                    };
+                        throw new ArgumentException($"File type not allowed: {file.FileName}");
+                    }
 
-                    await _attachmentRepository.AddAsync(newAttachment, cancellationToken);
-                    createdAttachments.Add(_mapper.Map<ReportAttachmentDto>(newAttachment));
+                    var filePath = Path.Combine(directoryPath, file.FileName);
+
+                    var existingAttachment = await _attachmentRepository.GetAll()
+                        .FirstOrDefaultAsync(a => a.ReportId == reportId && a.FileName == file.FileName, cancellationToken);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.Content.CopyToAsync(stream, cancellationToken);
+                    }
+
+                    if (existingAttachment != null)
+                    {
+                        existingAttachment.FileSizeKb = (int)(file.Length / 1024);
+                        existingAttachment.MimeType = file.ContentType;
+                        existingAttachment.UploadedAt = DateTime.UtcNow;
+                        existingAttachment.UploadedByUserId = userId;
+                        await _attachmentRepository.UpdateAsync(existingAttachment, cancellationToken);
+                        createdAttachments.Add(_mapper.Map<ReportAttachmentDto>(existingAttachment));
+                    }
+                    else
+                    {
+                        var newAttachment = new ReportAttachment
+                        {
+                            ReportId = reportId,
+                            UploadedByUserId = userId,
+                            FileName = file.FileName,
+                            FilePath = filePath,
+                            FileSizeKb = (int)(file.Length / 1024),
+                            MimeType = file.ContentType,
+                            UploadedAt = DateTime.UtcNow
+                        };
+
+                        await _attachmentRepository.AddAsync(newAttachment, cancellationToken);
+                        createdAttachments.Add(_mapper.Map<ReportAttachmentDto>(newAttachment));
+                    }
                 }
+                await _unitOfWork.CommitTransactionAsync(cancellationToken);
+            }
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                throw;
             }
 
             return createdAttachments;
@@ -135,6 +148,7 @@ namespace Simpl.Expenses.Application.Services
                     File.Delete(attachment.FilePath);
                 }
                 await _attachmentRepository.RemoveAsync(attachment, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
         }
     }

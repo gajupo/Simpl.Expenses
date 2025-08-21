@@ -9,11 +9,13 @@ namespace Simpl.Expenses.Application.Services
     public class UsoCFDIService : IUsoCFDIService
     {
         private readonly IGenericRepository<UsoCFDI> _usoCFDIRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public UsoCFDIService(IGenericRepository<UsoCFDI> usoCFDIRepository, IMapper mapper)
+        public UsoCFDIService(IGenericRepository<UsoCFDI> usoCFDIRepository, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _usoCFDIRepository = usoCFDIRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -33,6 +35,7 @@ namespace Simpl.Expenses.Application.Services
         {
             var usoCFDI = _mapper.Map<UsoCFDI>(createUsoCFDIDto);
             await _usoCFDIRepository.AddAsync(usoCFDI, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<UsoCFDIDto>(usoCFDI);
         }
 
@@ -44,6 +47,7 @@ namespace Simpl.Expenses.Application.Services
             _mapper.Map(updateUsoCFDIDto, usoCFDI);
 
             await _usoCFDIRepository.UpdateAsync(usoCFDI, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteUsoCFDIAsync(int id, CancellationToken cancellationToken = default)
@@ -52,6 +56,7 @@ namespace Simpl.Expenses.Application.Services
             if (usoCFDI != null)
             {
                 await _usoCFDIRepository.RemoveAsync(usoCFDI, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
         }
     }

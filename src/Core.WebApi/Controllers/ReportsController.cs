@@ -115,6 +115,14 @@ namespace Simpl.Expenses.Core.WebApi.Controllers
             return Ok(reports);
         }
 
+        [HttpGet("role/{roleId}/pending-approval")]
+        [Authorize(Policy = PermissionCatalog.ExpensesRead)]
+        public async Task<ActionResult<IEnumerable<ReportOverviewDto>>> GetPendingApprovalReportsByRoleId(int roleId, [FromQuery] string? searchText, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            var reports = await _reportService.GetPendingApprovalReportsByRoleIdAsync(roleId, searchText, pageNumber, pageSize);
+            return Ok(reports);
+        }
+
         [HttpPost("{reportId}/state")]
         [Authorize(Policy = PermissionCatalog.ExpensesUpdate)]
         public async Task<ActionResult<ReportStateDto>> CreateReportState(int reportId, CreateReportStateDto createReportStateDto)
@@ -134,6 +142,14 @@ namespace Simpl.Expenses.Core.WebApi.Controllers
         {
             var count = await _reportService.GetPendingApprovalCountAsync(userId, plantIds);
             return Ok(count);
+        }
+
+        [HttpPut("{id}/approve/{userId}")]
+        [Authorize(Policy = PermissionCatalog.ExpensesUpdate)]
+        public async Task<IActionResult> ApproveReport(int id, int userId)
+        {
+            await _reportService.ApproveReportAsync(id, userId);
+            return NoContent();
         }
     }
 }

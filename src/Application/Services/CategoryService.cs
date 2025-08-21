@@ -9,11 +9,13 @@ namespace Simpl.Expenses.Application.Services
     public class CategoryService : ICategoryService
     {
         private readonly IGenericRepository<Category> _categoryRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public CategoryService(IGenericRepository<Category> categoryRepository, IMapper mapper)
+        public CategoryService(IGenericRepository<Category> categoryRepository, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _categoryRepository = categoryRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -33,6 +35,7 @@ namespace Simpl.Expenses.Application.Services
         {
             var category = _mapper.Map<Category>(createCategoryDto);
             await _categoryRepository.AddAsync(category, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<CategoryDto>(category);
         }
 
@@ -44,6 +47,7 @@ namespace Simpl.Expenses.Application.Services
             _mapper.Map(updateCategoryDto, category);
 
             await _categoryRepository.UpdateAsync(category, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteCategoryAsync(int id, CancellationToken cancellationToken = default)
@@ -52,6 +56,7 @@ namespace Simpl.Expenses.Application.Services
             if (category != null)
             {
                 await _categoryRepository.RemoveAsync(category, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
         }
     }

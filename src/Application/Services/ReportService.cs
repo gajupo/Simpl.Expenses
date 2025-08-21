@@ -22,6 +22,7 @@ namespace Simpl.Expenses.Application.Services
         private readonly IGenericRepository<ReportType> _reportTypeRepository;
         private readonly IReportStateService _reportStateService;
         private readonly IApprovalLogService _approvalLogService;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILogger<ReportService> _logger;
 
@@ -30,6 +31,7 @@ namespace Simpl.Expenses.Application.Services
             IGenericRepository<ReportType> reportTypeRepository,
             IReportStateService reportStateService,
             IApprovalLogService approvalLogService,
+            IUnitOfWork unitOfWork,
             IMapper mapper,
             ILogger<ReportService> logger)
         {
@@ -37,6 +39,7 @@ namespace Simpl.Expenses.Application.Services
             _reportTypeRepository = reportTypeRepository;
             _reportStateService = reportStateService;
             _approvalLogService = approvalLogService;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
             _logger = logger;
         }
@@ -48,50 +51,61 @@ namespace Simpl.Expenses.Application.Services
 
             UpdateReportDetails(report, createReportDto);
 
-            await _reportRepository.AddAsync(report);
-            _logger.LogInformation($"Report created with ID: {report.Id} and Report Number: {report.ReportNumber}");
-
-            var reportTypeWorkflowInfo = await _reportTypeRepository.GetAll()
-                .Where(rt => rt.Id == report.ReportTypeId).FirstOrDefaultAsync();
-
-            if (reportTypeWorkflowInfo?.DefaultWorkflowId == null) throw new InvalidOperationException("Report type does not have a default workflow.");
-
-            var workflowInfo = await _reportTypeRepository.GetAll()
-                .Where(rt => rt.Id == report.ReportTypeId)
-                .Select(rt => new
-                {
-                    WorkflowId = rt.DefaultWorkflow.Id,
-                    Steps = rt.DefaultWorkflow.Steps.OrderBy(s => s.StepNumber).Select(s => new { s.Id }).ToList()
-                })
-                .FirstOrDefaultAsync();
-
-            if (workflowInfo?.Steps.Any() == true)
+            await _unitOfWork.BeginTransactionAsync();
+            try
             {
-                var firstStepId = workflowInfo.Steps.First().Id;
-                var createReportStateDto = new CreateReportStateDto
+                await _reportRepository.AddAsync(report);
+                await _unitOfWork.SaveChangesAsync();
+                _logger.LogInformation($"Report created with ID: {report.Id} and Report Number: {report.ReportNumber}");
+
+                var reportTypeWorkflowInfo = await _reportTypeRepository.GetAll()
+                    .Where(rt => rt.Id == report.ReportTypeId).FirstOrDefaultAsync();
+
+                if (reportTypeWorkflowInfo?.DefaultWorkflowId == null) throw new InvalidOperationException("Report type does not have a default workflow.");
+
+                var workflowInfo = await _reportTypeRepository.GetAll()
+                    .Where(rt => rt.Id == report.ReportTypeId)
+                    .Select(rt => new
+                    {
+                        WorkflowId = rt.DefaultWorkflow.Id,
+                        Steps = rt.DefaultWorkflow.Steps.OrderBy(s => s.StepNumber).Select(s => new { s.Id }).ToList()
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (workflowInfo?.Steps.Count > 0)
+                {
+                    var firstStepId = workflowInfo.Steps.First().Id;
+                    var createReportStateDto = new CreateReportStateDto
+                    {
+                        ReportId = report.Id,
+                        WorkflowId = workflowInfo.WorkflowId,
+                        CurrentStepId = firstStepId,
+                        Status = ReportStatus.Submitted
+                    };
+                    await _reportStateService.CreateReportStateAsync(createReportStateDto);
+                    _logger.LogInformation($"Report state created for Report ID: {report.Id} with status {createReportStateDto.Status}");
+                }
+
+                // insert submitted approval log
+                var createApprovalLogDto = new CreateApprovalLogDto
                 {
                     ReportId = report.Id,
-                    WorkflowId = workflowInfo.WorkflowId,
-                    CurrentStepId = firstStepId,
-                    Status = ReportStatus.Submitted
+                    UserId = report.UserId,
+                    Action = ApprovalAction.Submitted,
+                    Comment = "Enviado para aprovación"
                 };
-                await _reportStateService.CreateReportStateAsync(createReportStateDto);
-                _logger.LogInformation($"Report state created for Report ID: {report.Id} with status {createReportStateDto.Status}");
+
+                await _approvalLogService.CreateApprovalLogAsync(createApprovalLogDto);
+                _logger.LogInformation($"Approval log created for Report ID: {report.Id} with action {createApprovalLogDto.Action} and user ID {createApprovalLogDto.UserId}");
+
+                await _unitOfWork.CommitTransactionAsync();
+                return _mapper.Map<ReportDto>(report);
             }
-
-            // insert submitted approval log
-            var createApprovalLogDto = new CreateApprovalLogDto
+            catch
             {
-                ReportId = report.Id,
-                UserId = report.UserId,
-                Action = ApprovalAction.Submitted,
-                Comment = "Enviado para aprovación"
-            };
-
-            await _approvalLogService.CreateApprovalLogAsync(createApprovalLogDto);
-            _logger.LogInformation($"Approval log created for Report ID: {report.Id} with action {createApprovalLogDto.Action} and user ID {createApprovalLogDto.UserId}");
-
-            return _mapper.Map<ReportDto>(report);
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
         }
 
         public async Task DeleteReportAsync(int id)
@@ -100,6 +114,7 @@ namespace Simpl.Expenses.Application.Services
             if (report != null)
             {
                 await _reportRepository.RemoveAsync(report);
+                await _unitOfWork.SaveChangesAsync();
             }
         }
 
@@ -166,6 +181,7 @@ namespace Simpl.Expenses.Application.Services
                 _mapper.Map(updateReportDto, report);
                 UpdateReportDetails(report, updateReportDto);
                 await _reportRepository.UpdateAsync(report);
+                await _unitOfWork.SaveChangesAsync();
             }
         }
 
@@ -268,38 +284,48 @@ namespace Simpl.Expenses.Application.Services
 
         public async Task UpdateReportAndSubmitAsync(int id, UpdateReportDto updateReportDto)
         {
-            var report = await _reportRepository.GetAll()
-                .AsTracking() // ensure the graph is tracked for updates
-                .Include(r => r.PurchaseOrderDetail)
-                .Include(r => r.ReimbursementDetail)
-                .Include(r => r.AdvancePaymentDetail)
-                .FirstOrDefaultAsync(r => r.Id == id);
-
-            if (report == null)
+            await _unitOfWork.BeginTransactionAsync();
+            try
             {
-                throw new KeyNotFoundException($"Report with ID {id} not found.");
+                var report = await _reportRepository.GetAll()
+                    .AsTracking() // ensure the graph is tracked for updates
+                    .Include(r => r.PurchaseOrderDetail)
+                    .Include(r => r.ReimbursementDetail)
+                    .Include(r => r.AdvancePaymentDetail)
+                    .FirstOrDefaultAsync(r => r.Id == id);
+
+                if (report == null)
+                {
+                    throw new KeyNotFoundException($"Report with ID {id} not found.");
+                }
+
+                // map report data except ReimbursementDetail, PurchaseOrderDetail, AdvancePaymentDetail
+                _mapper.Map(updateReportDto, report);
+                UpdateReportDetails(report, updateReportDto);
+                await _reportRepository.UpdateAsync(report);
+
+                // get current report state
+                var currentState = await _reportStateService.GetReportStateByReportIdAsync(id);
+                if (currentState == null)
+                {
+                    throw new InvalidOperationException($"Report state for report ID {id} not found.");
+                }
+                // move report to next stage
+                var newReportState = new CreateReportStateDto
+                {
+                    ReportId = id,
+                    WorkflowId = currentState.WorkflowId,
+                    CurrentStepId = currentState.CurrentStepId,
+                    Status = ReportStatus.Submitted
+                };
+                await _reportStateService.CreateReportStateAsync(newReportState);
+                await _unitOfWork.CommitTransactionAsync();
             }
-
-            // map report data except ReimbursementDetail, PurchaseOrderDetail, AdvancePaymentDetail
-            _mapper.Map(updateReportDto, report);
-            UpdateReportDetails(report, updateReportDto);
-            await _reportRepository.UpdateAsync(report);
-
-            // get current report state
-            var currentState = await _reportStateService.GetReportStateByReportIdAsync(id);
-            if (currentState == null)
+            catch
             {
-                throw new InvalidOperationException($"Report state for report ID {id} not found.");
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
             }
-            // move report to next stage
-            var newReportState = new CreateReportStateDto
-            {
-                ReportId = id,
-                WorkflowId = currentState.WorkflowId,
-                CurrentStepId = currentState.CurrentStepId,
-                Status = ReportStatus.Submitted
-            };
-            await _reportStateService.CreateReportStateAsync(newReportState);
         }
 
         public async Task<ReportDto> CreateReportAsDraftAsync(CreateReportDto createReportDto)
@@ -309,33 +335,44 @@ namespace Simpl.Expenses.Application.Services
 
             UpdateReportDetails(report, createReportDto);
 
-            await _reportRepository.AddAsync(report);
-
-            var reportTypeWorkflowInfo = await _reportTypeRepository.GetAll()
-                .Where(rt => rt.Id == report.ReportTypeId).FirstOrDefaultAsync();
-
-            if (reportTypeWorkflowInfo?.DefaultWorkflowId == null) throw new InvalidOperationException("Report type does not have a default workflow.");
-
-            var workflowInfo = await _reportTypeRepository.GetAll()
-                .Where(rt => rt.Id == report.ReportTypeId)
-                .Select(rt => new
-                {
-                    WorkflowId = rt.DefaultWorkflow.Id,
-                    Steps = rt.DefaultWorkflow.Steps.OrderBy(s => s.StepNumber).Select(s => new { s.Id }).ToList()
-                })
-                .FirstOrDefaultAsync();
-
-            if (workflowInfo?.Steps.Any() == true)
+            await _unitOfWork.BeginTransactionAsync();
+            try
             {
-                var firstStepId = workflowInfo.Steps.First().Id;
-                var createReportStateDto = new CreateReportStateDto
+                await _reportRepository.AddAsync(report);
+                await _unitOfWork.SaveChangesAsync();
+
+                var reportTypeWorkflowInfo = await _reportTypeRepository.GetAll()
+                    .Where(rt => rt.Id == report.ReportTypeId).FirstOrDefaultAsync();
+
+                if (reportTypeWorkflowInfo?.DefaultWorkflowId == null) throw new InvalidOperationException("Report type does not have a default workflow.");
+
+                var workflowInfo = await _reportTypeRepository.GetAll()
+                    .Where(rt => rt.Id == report.ReportTypeId)
+                    .Select(rt => new
+                    {
+                        WorkflowId = rt.DefaultWorkflow.Id,
+                        Steps = rt.DefaultWorkflow.Steps.OrderBy(s => s.StepNumber).Select(s => new { s.Id }).ToList()
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (workflowInfo?.Steps.Count > 0)
                 {
-                    ReportId = report.Id,
-                    WorkflowId = workflowInfo.WorkflowId,
-                    CurrentStepId = firstStepId,
-                    Status = ReportStatus.Draft
-                };
-                await _reportStateService.CreateReportStateAsync(createReportStateDto);
+                    var firstStepId = workflowInfo.Steps.First().Id;
+                    var createReportStateDto = new CreateReportStateDto
+                    {
+                        ReportId = report.Id,
+                        WorkflowId = workflowInfo.WorkflowId,
+                        CurrentStepId = firstStepId,
+                        Status = ReportStatus.Draft
+                    };
+                    await _reportStateService.CreateReportStateAsync(createReportStateDto);
+                }
+                await _unitOfWork.CommitTransactionAsync();
+            }
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
             }
 
             return _mapper.Map<ReportDto>(report);
@@ -359,10 +396,10 @@ namespace Simpl.Expenses.Application.Services
             {
                 var searchTextLower = searchText.ToLower();
                 query = query.Where(r =>
-                    r.Name.ToLower().Contains(searchTextLower) ||
-                    r.Amount.ToString().Contains(searchTextLower) ||
-                    r.ReportType.Name.ToLower().Contains(searchTextLower) ||
-                    r.ReportNumber.ToLower().Contains(searchTextLower));
+                    r.Name.Contains(searchTextLower, StringComparison.CurrentCultureIgnoreCase) ||
+                    r.Amount.ToString().Contains(searchTextLower, StringComparison.CurrentCultureIgnoreCase) ||
+                    r.ReportType.Name.Contains(searchTextLower, StringComparison.CurrentCultureIgnoreCase) ||
+                    r.ReportNumber.Contains(searchTextLower, StringComparison.CurrentCultureIgnoreCase));
             }
 
             var totalCount = await query.CountAsync();
@@ -397,6 +434,118 @@ namespace Simpl.Expenses.Application.Services
                 .ToListAsync();
 
             return new PaginatedResultDto<ReportOverviewDto>(reports, totalCount, pageNumber, pageSize);
+        }
+
+        public async Task<PaginatedResultDto<ReportOverviewDto>> GetPendingApprovalReportsByRoleIdAsync(int roleId, string? searchText, int pageNumber, int pageSize)
+        {
+            var query = _reportRepository.GetAll().Where(r => r.User.RoleId == roleId && r.ReportState != null && r.ReportState.Status == ReportStatus.Submitted);
+
+            if (!string.IsNullOrEmpty(searchText))
+            {
+                var searchTextLower = searchText.ToLower();
+                query = query.Where(r =>
+                    r.Name.Contains(searchTextLower, StringComparison.CurrentCultureIgnoreCase) ||
+                    r.Amount.ToString().Contains(searchTextLower, StringComparison.CurrentCultureIgnoreCase) ||
+                    r.ReportType.Name.Contains(searchTextLower, StringComparison.CurrentCultureIgnoreCase) ||
+                    r.ReportNumber.Contains(searchTextLower, StringComparison.CurrentCultureIgnoreCase));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var reports = await query
+                .OrderByDescending(r => r.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(r => new ReportOverviewDto
+                {
+                    Id = r.Id,
+                    ReportNumber = r.ReportNumber,
+                    Name = r.Name,
+                    Amount = r.Amount,
+                    Currency = r.Currency,
+                    UserId = r.UserId,
+                    ReportTypeId = r.ReportTypeId,
+                    ReportTypeName = r.ReportType.Name,
+                    PlantId = r.Plant.Id,
+                    PlantName = r.Plant.Name,
+                    CategoryId = r.Category.Id,
+                    CategoryName = r.Category.Name,
+                    CreatedAt = r.CreatedAt,
+                    ReportDescription = r.ReportDescription,
+                    ReportDate = r.ReportDate,
+                    AccountProjectId = r.AccountProjectId,
+                    AccountProjectName = r.AccountProject != null ? r.AccountProject.Name : null,
+                    Status = r.ReportState != null ? r.ReportState.Status.ToString() : null,
+                    CurrentStepId = r.ReportState != null ? (int?)r.ReportState.CurrentStepId : null,
+                    CurrentStepName = r.ReportState != null && r.ReportState.CurrentStep != null ? r.ReportState.CurrentStep.Name : null
+                })
+                .ToListAsync();
+
+            return new PaginatedResultDto<ReportOverviewDto>(reports, totalCount, pageNumber, pageSize);
+        }
+
+        public async Task ApproveReportAsync(int reportId, int userId)
+        {
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var report = await _reportRepository.GetAll().Include(r => r.ReportState).FirstOrDefaultAsync(r => r.Id == reportId) ?? throw new KeyNotFoundException($"Report with ID {reportId} not found.");
+                var reportTypeWorkflowInfo = await _reportTypeRepository.GetAll()
+                    .Where(rt => rt.Id == report.ReportTypeId).FirstOrDefaultAsync();
+
+                if (reportTypeWorkflowInfo?.DefaultWorkflowId == null) throw new InvalidOperationException("Report type does not have a default workflow.");
+
+                var workflowInfo = await _reportTypeRepository.GetAll()
+                    .Where(rt => rt.Id == report.ReportTypeId)
+                    .Select(rt => new
+                    {
+                        WorkflowId = rt.DefaultWorkflow.Id,
+                        Steps = rt.DefaultWorkflow.Steps.OrderBy(s => s.StepNumber).Select(s => new { s.Id, s.StepNumber }).ToList()
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (workflowInfo?.Steps.Count > 0)
+                {
+                    var currentStep = workflowInfo.Steps.FirstOrDefault(s => s.Id == report.ReportState.CurrentStepId);
+                    if (currentStep != null)
+                    {
+                        // If it's the first step, set status to In Progress
+                        if (currentStep.StepNumber == 1)
+                        {
+                            report.ReportState.Status = ReportStatus.InProgress;
+                        }
+                        // If it's the last step, set status to Approved
+                        else if (currentStep.StepNumber == workflowInfo.Steps.Count)
+                        {
+                            report.ReportState.Status = ReportStatus.Approved;
+                        }
+                        // Move to the next step
+                        report.ReportState.CurrentStepId = currentStep.StepNumber + 1;
+
+                        await _reportRepository.UpdateAsync(report);
+
+                        var approvalLog = new CreateApprovalLogDto
+                        {
+                            ReportId = reportId,
+                            UserId = userId,
+                            Action = ApprovalAction.Approved,
+                            Comment = $"Aprobado por el usuario {userId}"
+                        };
+
+                        await _approvalLogService.CreateApprovalLogAsync(approvalLog);
+                    }
+                }
+                else
+                {
+                    throw new InvalidOperationException("Workflow associated with the report type does not have any steps.");
+                }
+                await _unitOfWork.CommitTransactionAsync();
+            }
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
         }
     }
 }

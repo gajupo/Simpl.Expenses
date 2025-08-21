@@ -9,11 +9,13 @@ namespace Simpl.Expenses.Application.Services
     public class AccountProjectService : IAccountProjectService
     {
         private readonly IGenericRepository<AccountProject> _accountProjectRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public AccountProjectService(IGenericRepository<AccountProject> accountProjectRepository, IMapper mapper)
+        public AccountProjectService(IGenericRepository<AccountProject> accountProjectRepository, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _accountProjectRepository = accountProjectRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -33,6 +35,7 @@ namespace Simpl.Expenses.Application.Services
         {
             var accountProject = _mapper.Map<AccountProject>(createAccountProjectDto);
             await _accountProjectRepository.AddAsync(accountProject, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<AccountProjectDto>(accountProject);
         }
 
@@ -44,6 +47,7 @@ namespace Simpl.Expenses.Application.Services
             _mapper.Map(updateAccountProjectDto, accountProject);
 
             await _accountProjectRepository.UpdateAsync(accountProject, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteAccountProjectAsync(int id, CancellationToken cancellationToken = default)
@@ -52,6 +56,7 @@ namespace Simpl.Expenses.Application.Services
             if (accountProject != null)
             {
                 await _accountProjectRepository.RemoveAsync(accountProject, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
         }
     }

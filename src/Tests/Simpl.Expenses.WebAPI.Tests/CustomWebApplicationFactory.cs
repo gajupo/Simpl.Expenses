@@ -30,6 +30,7 @@ namespace Simpl.Expenses.WebAPI.Tests
                 services.AddDbContext<ApplicationDbContext>(options =>
                 {
                     options.UseInMemoryDatabase(_dbName);
+                    options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning));
                 });
 
                 var sp = services.BuildServiceProvider();

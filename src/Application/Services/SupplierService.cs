@@ -9,11 +9,13 @@ namespace Simpl.Expenses.Application.Services
     public class SupplierService : ISupplierService
     {
         private readonly IGenericRepository<Supplier> _supplierRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public SupplierService(IGenericRepository<Supplier> supplierRepository, IMapper mapper)
+        public SupplierService(IGenericRepository<Supplier> supplierRepository, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _supplierRepository = supplierRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -33,6 +35,7 @@ namespace Simpl.Expenses.Application.Services
         {
             var supplier = _mapper.Map<Supplier>(createSupplierDto);
             await _supplierRepository.AddAsync(supplier, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<SupplierDto>(supplier);
         }
 
@@ -44,6 +47,7 @@ namespace Simpl.Expenses.Application.Services
             _mapper.Map(updateSupplierDto, supplier);
 
             await _supplierRepository.UpdateAsync(supplier, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteSupplierAsync(int id, CancellationToken cancellationToken = default)
@@ -52,6 +56,7 @@ namespace Simpl.Expenses.Application.Services
             if (supplier != null)
             {
                 await _supplierRepository.RemoveAsync(supplier, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
         }
     }

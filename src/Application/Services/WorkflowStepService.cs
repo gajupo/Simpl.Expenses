@@ -12,11 +12,13 @@ namespace Simpl.Expenses.Application.Services
     public class WorkflowStepService : IWorkflowStepService
     {
         private readonly IGenericRepository<WorkflowStep> _workflowStepRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public WorkflowStepService(IGenericRepository<WorkflowStep> workflowStepRepository, IMapper mapper)
+        public WorkflowStepService(IGenericRepository<WorkflowStep> workflowStepRepository, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _workflowStepRepository = workflowStepRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -38,6 +40,7 @@ namespace Simpl.Expenses.Application.Services
         {
             var workflowStep = _mapper.Map<WorkflowStep>(createWorkflowStepDto);
             await _workflowStepRepository.AddAsync(workflowStep, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<WorkflowStepDto>(workflowStep);
         }
 
@@ -49,6 +52,7 @@ namespace Simpl.Expenses.Application.Services
             _mapper.Map(updateWorkflowStepDto, workflowStep);
 
             await _workflowStepRepository.UpdateAsync(workflowStep, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteWorkflowStepAsync(int id, CancellationToken cancellationToken = default)
@@ -57,6 +61,7 @@ namespace Simpl.Expenses.Application.Services
             if (workflowStep != null)
             {
                 await _workflowStepRepository.RemoveAsync(workflowStep, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
         }
 

@@ -9,11 +9,13 @@ namespace Simpl.Expenses.Application.Services
     public class PlantService : IPlantService
     {
         private readonly IGenericRepository<Plant> _plantRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public PlantService(IGenericRepository<Plant> plantRepository, IMapper mapper)
+        public PlantService(IGenericRepository<Plant> plantRepository, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _plantRepository = plantRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -33,6 +35,7 @@ namespace Simpl.Expenses.Application.Services
         {
             var plant = _mapper.Map<Plant>(createPlantDto);
             await _plantRepository.AddAsync(plant, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<PlantDto>(plant);
         }
 
@@ -44,6 +47,7 @@ namespace Simpl.Expenses.Application.Services
             _mapper.Map(updatePlantDto, plant);
 
             await _plantRepository.UpdateAsync(plant, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeletePlantAsync(int id, CancellationToken cancellationToken = default)
@@ -52,6 +56,7 @@ namespace Simpl.Expenses.Application.Services
             if (plant != null)
             {
                 await _plantRepository.RemoveAsync(plant, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
         }
     }

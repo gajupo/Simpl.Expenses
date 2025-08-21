@@ -13,19 +13,22 @@ namespace Simpl.Expenses.Application.Services
         private readonly IGenericRepository<UserPermission> _userPermissions;
         private readonly IGenericRepository<Permission> _permissions;
         private readonly IGenericRepository<Role> _roles;
+        private readonly IUnitOfWork _unitOfWork;
 
         public AuthService(
             IGenericRepository<User> users,
             IGenericRepository<RolePermission> rolePermissions,
             IGenericRepository<UserPermission> userPermissions,
             IGenericRepository<Permission> permissions,
-            IGenericRepository<Role> roles)
+            IGenericRepository<Role> roles,
+            IUnitOfWork unitOfWork)
         {
             _users = users;
             _rolePermissions = rolePermissions;
             _userPermissions = userPermissions;
             _permissions = permissions;
             _roles = roles;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<AuthProjectionDto?> GetAuthProjectionByUsernameAsync(string username, CancellationToken cancellationToken = default)
@@ -78,6 +81,7 @@ namespace Simpl.Expenses.Application.Services
                 {
                     user.RoleId = roleIds[0];
                     await _users.UpdateAsync(user, cancellationToken);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
                 }
             }
         }
@@ -96,11 +100,22 @@ namespace Simpl.Expenses.Application.Services
                 .Where(up => up.UserId == userId)
                 .ToListAsync(cancellationToken);
 
-            await _userPermissions.RemoveRangeAsync(existing, cancellationToken);
+            await _unitOfWork.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                await _userPermissions.RemoveRangeAsync(existing, cancellationToken);
 
-            var newPermissions = permissionIds
-                .Select(pid => new UserPermission { UserId = userId, PermissionId = pid, IsGranted = true });
-            await _userPermissions.AddRangeAsync(newPermissions, cancellationToken);
+                var newPermissions = permissionIds
+                    .Select(pid => new UserPermission { UserId = userId, PermissionId = pid, IsGranted = true });
+                await _userPermissions.AddRangeAsync(newPermissions, cancellationToken);
+
+                await _unitOfWork.CommitTransactionAsync(cancellationToken);
+            }
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                throw;
+            }
         }
 
         public async Task AssignPermissionsToRoleAsync(int roleId, string[] permissionNames, CancellationToken cancellationToken = default)
@@ -113,11 +128,21 @@ namespace Simpl.Expenses.Application.Services
             var existing = await _rolePermissions.GetAll(cancellationToken)
                 .Where(rp => rp.RoleId == roleId)
                 .ToListAsync(cancellationToken);
+            
+            await _unitOfWork.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                await _rolePermissions.RemoveRangeAsync(existing, cancellationToken);
 
-            await _rolePermissions.RemoveRangeAsync(existing, cancellationToken);
-
-            var newPermissions = permissionIds.Select(pid => new RolePermission { RoleId = roleId, PermissionId = pid });
-            await _rolePermissions.AddRangeAsync(newPermissions, cancellationToken);
+                var newPermissions = permissionIds.Select(pid => new RolePermission { RoleId = roleId, PermissionId = pid });
+                await _rolePermissions.AddRangeAsync(newPermissions, cancellationToken);
+                await _unitOfWork.CommitTransactionAsync(cancellationToken);
+            }
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                throw;
+            }
         }
     }
 }

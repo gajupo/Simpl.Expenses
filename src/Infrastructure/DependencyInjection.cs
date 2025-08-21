@@ -36,6 +36,7 @@ namespace Simpl.Expenses.Infrastructure
                     ));
             }
 
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             return services;
         }

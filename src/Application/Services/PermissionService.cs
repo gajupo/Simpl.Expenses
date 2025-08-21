@@ -10,11 +10,13 @@ namespace Simpl.Expenses.Application.Services;
 public class PermissionService : IPermissionService
 {
     private readonly IGenericRepository<Permission> _permissionRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public PermissionService(IGenericRepository<Permission> permissionRepository, IMapper mapper)
+    public PermissionService(IGenericRepository<Permission> permissionRepository, IUnitOfWork unitOfWork, IMapper mapper)
     {
         _permissionRepository = permissionRepository;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -37,6 +39,7 @@ public class PermissionService : IPermissionService
     {
         var permission = _mapper.Map<Permission>(createPermissionDto);
         await _permissionRepository.AddAsync(permission, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         return _mapper.Map<PermissionDto>(permission);
     }
 
@@ -48,6 +51,7 @@ public class PermissionService : IPermissionService
         _mapper.Map(updatePermissionDto, permission);
 
         await _permissionRepository.UpdateAsync(permission, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     public async Task DeletePermissionAsync(int id, CancellationToken cancellationToken = default)
@@ -56,6 +60,7 @@ public class PermissionService : IPermissionService
         if (permission != null)
         {
             await _permissionRepository.RemoveAsync(permission, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }
 }

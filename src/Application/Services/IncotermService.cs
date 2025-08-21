@@ -9,11 +9,13 @@ namespace Simpl.Expenses.Application.Services
     public class IncotermService : IIncotermService
     {
         private readonly IGenericRepository<Incoterm> _incotermRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public IncotermService(IGenericRepository<Incoterm> incotermRepository, IMapper mapper)
+        public IncotermService(IGenericRepository<Incoterm> incotermRepository, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _incotermRepository = incotermRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -33,6 +35,7 @@ namespace Simpl.Expenses.Application.Services
         {
             var incoterm = _mapper.Map<Incoterm>(createIncotermDto);
             await _incotermRepository.AddAsync(incoterm, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<IncotermDto>(incoterm);
         }
 
@@ -44,6 +47,7 @@ namespace Simpl.Expenses.Application.Services
             _mapper.Map(updateIncotermDto, incoterm);
 
             await _incotermRepository.UpdateAsync(incoterm, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteIncotermAsync(int id, CancellationToken cancellationToken = default)
@@ -52,6 +56,7 @@ namespace Simpl.Expenses.Application.Services
             if (incoterm != null)
             {
                 await _incotermRepository.RemoveAsync(incoterm, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
         }
     }

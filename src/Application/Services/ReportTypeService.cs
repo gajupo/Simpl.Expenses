@@ -10,11 +10,13 @@ namespace Simpl.Expenses.Application.Services
     public class ReportTypeService : IReportTypeService
     {
         private readonly IGenericRepository<ReportType> _reportTypeRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public ReportTypeService(IGenericRepository<ReportType> reportTypeRepository, IMapper mapper)
+        public ReportTypeService(IGenericRepository<ReportType> reportTypeRepository, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _reportTypeRepository = reportTypeRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -37,6 +39,7 @@ namespace Simpl.Expenses.Application.Services
         {
             var reportType = _mapper.Map<ReportType>(createReportTypeDto);
             await _reportTypeRepository.AddAsync(reportType, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var createdDto = await _reportTypeRepository.GetAll(cancellationToken)
                 .Include(rt => rt.DefaultWorkflow)
@@ -55,6 +58,7 @@ namespace Simpl.Expenses.Application.Services
             _mapper.Map(updateReportTypeDto, reportType);
 
             await _reportTypeRepository.UpdateAsync(reportType, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteReportTypeAsync(int id, CancellationToken cancellationToken = default)
@@ -63,6 +67,7 @@ namespace Simpl.Expenses.Application.Services
             if (reportType != null)
             {
                 await _reportTypeRepository.RemoveAsync(reportType, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
         }
     }

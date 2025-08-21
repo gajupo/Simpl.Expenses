@@ -12,11 +12,13 @@ namespace Simpl.Expenses.Application.Services
     public class ReportStateService : IReportStateService
     {
         private readonly IGenericRepository<ReportState> _reportStateRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public ReportStateService(IGenericRepository<ReportState> reportStateRepository, IMapper mapper)
+        public ReportStateService(IGenericRepository<ReportState> reportStateRepository, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _reportStateRepository = reportStateRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -30,13 +32,14 @@ namespace Simpl.Expenses.Application.Services
             if (existingState != null)
             {
                 reportStateToSave = _mapper.Map(createReportStateDto, existingState);
-                _reportStateRepository.UpdateAsync(reportStateToSave);
+                await _reportStateRepository.UpdateAsync(reportStateToSave);
             }
             else
             {
                 reportStateToSave = _mapper.Map<ReportState>(createReportStateDto);
                 await _reportStateRepository.AddAsync(reportStateToSave);
             }
+            await _unitOfWork.SaveChangesAsync();
 
             return _mapper.Map<ReportStateDto>(reportStateToSave);
         }

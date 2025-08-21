@@ -9,11 +9,13 @@ namespace Simpl.Expenses.Application.Services
     public class DepartmentService : IDepartmentService
     {
         private readonly IGenericRepository<Department> _departmentRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public DepartmentService(IGenericRepository<Department> departmentRepository, IMapper mapper)
+        public DepartmentService(IGenericRepository<Department> departmentRepository, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _departmentRepository = departmentRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -33,6 +35,7 @@ namespace Simpl.Expenses.Application.Services
         {
             var department = _mapper.Map<Department>(createDepartmentDto);
             await _departmentRepository.AddAsync(department, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<DepartmentDto>(department);
         }
 
@@ -44,6 +47,7 @@ namespace Simpl.Expenses.Application.Services
             _mapper.Map(updateDepartmentDto, department);
 
             await _departmentRepository.UpdateAsync(department, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteDepartmentAsync(int id, CancellationToken cancellationToken = default)
@@ -52,6 +56,7 @@ namespace Simpl.Expenses.Application.Services
             if (department != null)
             {
                 await _departmentRepository.RemoveAsync(department, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
         }
     }

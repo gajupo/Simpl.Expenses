@@ -15,11 +15,13 @@ namespace Simpl.Expenses.Application.Services
     public class ApprovalLogService : IApprovalLogService
     {
         private readonly IGenericRepository<ApprovalLog> _approvalLogRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public ApprovalLogService(IGenericRepository<ApprovalLog> approvalLogRepository, IMapper mapper)
+        public ApprovalLogService(IGenericRepository<ApprovalLog> approvalLogRepository, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _approvalLogRepository = approvalLogRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -43,6 +45,7 @@ namespace Simpl.Expenses.Application.Services
             var approvalLog = _mapper.Map<ApprovalLog>(createApprovalLogDto);
             approvalLog.LogDate = DateTime.UtcNow;
             await _approvalLogRepository.AddAsync(approvalLog, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<ApprovalLogDto>(approvalLog);
         }
 
@@ -54,6 +57,7 @@ namespace Simpl.Expenses.Application.Services
             _mapper.Map(updateApprovalLogDto, approvalLog);
 
             await _approvalLogRepository.UpdateAsync(approvalLog, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteApprovalLogAsync(int id, CancellationToken cancellationToken = default)
@@ -62,6 +66,7 @@ namespace Simpl.Expenses.Application.Services
             if (approvalLog != null)
             {
                 await _approvalLogRepository.RemoveAsync(approvalLog, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
         }
 

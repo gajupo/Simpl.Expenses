@@ -17,6 +17,7 @@ namespace Simpl.Expenses.Application.Tests
         private readonly IGenericRepository<UserPlant> _userPlantRepository;
         private readonly IMapper _mapper;
         private readonly IUserService _userService;
+        private readonly IUnitOfWork _unitOfWork;
 
         public UserServiceTests()
         {
@@ -34,7 +35,8 @@ namespace Simpl.Expenses.Application.Tests
 
             _userRepository = new GenericRepository<User>(_context);
             _userPlantRepository = new GenericRepository<UserPlant>(_context);
-            _userService = new UserService(_userRepository, _userPlantRepository, _mapper);
+            _unitOfWork = new UnitOfWork(_context);
+            _userService = new UserService(_userRepository, _userPlantRepository, _unitOfWork, _mapper);
         }
 
         private void SeedDatabase()
